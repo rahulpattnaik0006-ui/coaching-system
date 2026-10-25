@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Portal · Coaching Centre</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { -webkit-font-smoothing: antialiased; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
+    @keyframes toast-out { to { opacity: 0; transform: translateY(-8px) scale(.98); } }
+    @keyframes pop { 0% { transform: scale(.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+    .toast-in { animation: toast-in .18s ease-out both; }
+    .toast-out { animation: toast-out .18s ease-in both; }
+    .pop { animation: pop .25s ease-out both; }
+    .shake { animation: shake .25s ease-in-out; }
+    .skeleton { background: #e2e8f0; border-radius: 6px; animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: .5; } }
+    .tabular { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+
+<body class="h-full bg-slate-50 font-sans text-slate-900">
+
+  <!-- Toasts -->
+  <div id="toastRegion" class="pointer-events-none fixed inset-x-4 top-4 z-50 ml-auto flex max-w-sm flex-col gap-2" aria-live="polite"></div>
+
+  <!-- ===================== LOGIN VIEW ===================== -->
+  <div id="loginView" class="hidden min-h-full items-center justify-center px-4 py-12">
+    <div class="w-full max-w-sm">
+      <div class="mb-6 flex flex-col items-center text-center">
+        <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14v7m-6-4.5V12l6 3 6-3v4.5" /></svg>
+        </div>
+        <h1 class="mt-4 text-xl font-semibold tracking-tight">Student Portal</h1>
+        <p class="mt-1 text-sm text-slate-500">Sign in to check in, view attendance and results.</p>
+      </div>
+
+      <form id="loginForm" class="rounded-lg border border-slate-200 bg-white shadow-sm" novalidate>
+        <div class="space-y-4 p-5 sm:p-6">
+          <div>
+            <label for="admissionNo" class="mb-1.5 block text-sm font-medium text-slate-700">Admission Number</label>
+            <input id="admissionNo" type="text" autocomplete="username" autocapitalize="characters" spellcheck="false" maxlength="30" placeholder="ADM-001"
+              class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm uppercase text-slate-900 placeholder-slate-400 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+          </div>
+          <div>
+            <label for="pin" class="mb-1.5 block text-sm font-medium text-slate-700">PIN</label>
+            <div class="relative">
+              <input id="pin" type="password" autocomplete="current-password" maxlength="30" placeholder="••••"
+                class="block w-full rounded-md border border-slate-300 bg-white py-2.5 pl-3 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+              <button id="pinToggle" type="button" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-700 focus:outline-none focus-visible:text-slate-900" aria-label="Show PIN">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.46 12C3.73 7.94 7.52 5 12 5s8.27 2.94 9.54 7c-1.27 4.06-5.06 7-9.54 7S3.73 16.06 2.46 12z" /><circle cx="12" cy="12" r="3" /></svg>
+              </button>
+            </div>
+          </div>
+
+          <div id="loginError" class="hidden items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700" role="alert">
+            <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span id="loginErrorText"></span>
+          </div>
+
+          <button id="loginBtn" type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+            <svg class="btn-spinner hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".3" stroke-width="3"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>
+            <span class="btn-label">Sign In</span>
+          </button>
+        </div>
+        <div class="rounded-b-lg border-t border-slate-200 bg-slate-50 px-5 py-3 text-center text-xs text-slate-500 sm:px-6">
+          Forgot your PIN? Ask your centre's front desk to reset it.
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== DASHBOARD VIEW ===================== -->
+  <div id="dashView" class="hidden min-h-full flex-col">
+
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+      <div class="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div class="flex min-w-0 items-center gap-2.5">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-900 text-white">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14v7m-6-4.5V12l6 3 6-3v4.5" /></svg>
+          </div>
+          <p id="centreName" class="hidden truncate text-sm font-semibold sm:block">Coaching Centre</p>
+        </div>
+
+        <div class="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div class="flex min-w-0 items-center gap-2.5">
+            <div id="navAvatar" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">··</div>
+            <div class="min-w-0">
+              <p id="navName" class="max-w-[8.5rem] truncate text-sm font-medium leading-tight sm:max-w-[16rem]">Student</p>
+              <span id="navBatch" class="mt-0.5 inline-block max-w-[8.5rem] truncate rounded border border-slate-200 bg-slate-50 px-1.5 py-px text-[11px] font-medium leading-tight text-slate-600 sm:max-w-[14rem]">Batch</span>
+            </div>
+          </div>
+          <button id="signOutBtn" type="button" class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            <span class="hidden sm:inline">Sign Out</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 px-4 py-6 sm:px-6">
+      <div class="mx-auto max-w-5xl space-y-6">
+
+        <!-- Greeting -->
+        <div class="flex items-end justify-between gap-3">
+          <div class="min-w-0">
+            <h1 id="greeting" class="truncate text-xl font-semibold tracking-tight">Welcome</h1>
+            <p id="todayLabel" class="mt-0.5 text-sm text-slate-500">&nbsp;</p>
+          </div>
+          <button id="refreshBtn" type="button" class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
+            <svg id="refreshIcon" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0018.4 9M18.4 9L20 9M5.6 15L4 15" /></svg>
+            Refresh
+          </button>
+        </div>
+
+        <!-- Hero: Today's attendance -->
+        <section id="hero" aria-label="Today's attendance check-in"></section>
+
+        <!-- Metrics -->
+        <section class="grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Summary metrics">
+          <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-xs font-medium text-slate-500">Attendance Rate</p>
+            <p id="mRate" class="tabular mt-1.5 text-2xl font-semibold tracking-tight"><span class="skeleton inline-block h-7 w-16 align-middle"></span></p>
+            <p id="mRateSub" class="mt-1 text-xs text-slate-500">&nbsp;</p>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-xs font-medium text-slate-500">Total Classes Attended</p>
+            <p id="mAttended" class="tabular mt-1.5 text-2xl font-semibold tracking-tight"><span class="skeleton inline-block h-7 w-12 align-middle"></span></p>
+            <p id="mAttendedSub" class="mt-1 text-xs text-slate-500">&nbsp;</p>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-xs font-medium text-slate-500">Average Exam Score</p>
+            <p id="mScore" class="tabular mt-1.5 text-2xl font-semibold tracking-tight"><span class="skeleton inline-block h-7 w-16 align-middle"></span></p>
+            <p id="mScoreSub" class="mt-1 text-xs text-slate-500">&nbsp;</p>
+          </div>
+        </section>
+
+        <!-- Results -->
+        <section class="rounded-lg border border-slate-200 bg-white shadow-sm" aria-labelledby="sec-results">
+          <div class="border-b border-slate-200 px-5 py-4">
+            <h2 id="sec-results" class="text-sm font-semibold">Exam Results &amp; Report Card</h2>
+            <p class="mt-0.5 text-sm text-slate-500">Only published results appear here.</p>
+          </div>
+          <div id="resultsBody"></div>
+        </section>
+
+        <!-- Attendance log -->
+        <section class="rounded-lg border border-slate-200 bg-white shadow-sm" aria-labelledby="sec-log">
+          <div class="border-b border-slate-200 px-5 py-4">
+            <h2 id="sec-log" class="text-sm font-semibold">Recent Attendance</h2>
+            <p class="mt-0.5 text-sm text-slate-500">Your last 10 attendance records.</p>
+          </div>
+          <div id="logBody"></div>
+        </section>
+
+        <p class="pb-4 text-center text-xs text-slate-400">Having trouble? Contact your centre's front desk.</p>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { supabase } from '../js/auth.js';
+
+    /* ================= Config ================= */
+    const SESSION_KEY = 'cc_student_session';
+    const MAX_ATTEMPTS = 5;
+    const LOCKOUT_MS = 30000;
+
+    const $ = (id) => document.getElementById(id);
+    const state = {
+      student: null,
+      batchName: '',
+      today: '',
+      todayRecord: null,
+      attendance: [],
+      marks: [],
+      attendanceOk: false,
+      marksOk: false,
+      attendanceErr: '',
+      marksErr: '',
+      checkingIn: false,
+      loadSeq: 0,
+      failedAttempts: 0,
+      lockedUntil: 0
+    };
+
+    /* ================= Utilities ================= */
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const pad = (n) => String(n).padStart(2, '0');
+    const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+    const statusKey = (s) => String(s || '').toLowerCase();
+
+    function initials(name) {
+      const p = String(name || '').trim().split(/\s+/).filter(Boolean);
+      if (!p.length) return '··';
+      return (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+    }
+    function parseLocalDate(s) {
+      const [y, m, d] = String(s || '').slice(0, 10).split('-').map(Number);
+      return new Date(y, (m || 1) - 1, d || 1);
+    }
+    function fmtDate(s) {
+      if (!s) return '—';
+      const d = parseLocalDate(s);
+      return isNaN(d) ? '—' : d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+    function fmtWeekday(s) {
+      const d = parseLocalDate(s);
+      return isNaN(d) ? '' : d.toLocaleDateString(undefined, { weekday: 'short' });
+    }
+    function fmtTime(v) {
+      if (!v) return '';
+      const d = new Date(v);
+      return isNaN(d) ? '' : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    }
+    const fmtNum = (n) => (Number.isInteger(Number(n)) ? String(Number(n)) : String(Math.round(Number(n) * 100) / 100));
+    function setLoading(btn, loading, text) {
+      const sp = btn.querySelector('.btn-spinner'), lb = btn.querySelector('.btn-label');
+      if (!btn.dataset.label) btn.dataset.label = lb.textContent;
+      btn.disabled = loading;
+      btn.setAttribute('aria-busy', String(loading));
+      sp.classList.toggle('hidden', !loading);
+      lb.textContent = loading ? text : btn.dataset.label;
+    }
+
+    /* ================= Toasts ================= */
+    const TOAST = {
+      success: { title: 'Success', icon: '<svg class="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' },
+      error:   { title: 'Error',   icon: '<svg class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>' },
+      info:    { title: 'Notice',  icon: '<svg class="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' }
+    };
+    function toast(message, type = 'info', duration = 4500) {
+      const cfg = TOAST[type] || TOAST.info;
+      const el = document.createElement('div');
+      el.className = 'toast-in pointer-events-auto flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3.5 shadow-lg';
+      el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+      el.innerHTML = `<div class="mt-0.5 shrink-0">${cfg.icon}</div>
+        <div class="min-w-0 flex-1"><p class="text-sm font-medium text-slate-900">${cfg.title}</p><p class="toast-msg mt-0.5 break-words text-sm text-slate-600"></p></div>
+        <button type="button" class="shrink-0 rounded p-0.5 text-slate-400 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900" aria-label="Dismiss"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>`;
+      el.querySelector('.toast-msg').textContent = message;
+      const dismiss = () => { el.classList.remove('toast-in'); el.classList.add('toast-out'); setTimeout(() => el.remove(), 200); };
+      el.querySelector('button').addEventListener('click', dismiss);
+      $('toastRegion').appendChild(el);
+      setTimeout(dismiss, duration);
+    }
+
+    /* ================= Session ================= */
+    function readSession() {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (!raw) return null;
+        const s = JSON.parse(raw);
+        if (!s || typeof s !== 'object' || !s.id || !s.full_name) return null;
+        return { id: s.id, full_name: String(s.full_name), admission_no: s.admission_no ?? '', batch_id: s.batch_id ?? null };
+      } catch (_) {
+        return null;
+      }
+    }
+    function writeSession(student) {
+      try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          id: student.id, full_name: student.full_name, admission_no: student.admission_no, batch_id: student.batch_id
+        }));
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+    function clearSession() {
+      try { localStorage.removeItem(SESSION_KEY); } catch (_) { /* ignore */ }
+    }
+
+    /* ================= View switching ================= */
+    function showLogin() {
+      state.student = null;
+      $('dashView').classList.add('hidden'); $('dashView').classList.remove('flex');
+      $('loginView').classList.remove('hidden'); $('loginView').classList.add('flex');
+      $('pin').value = '';
+      showLoginError('');
+      setTimeout(() => $('admissionNo').focus(), 0);
+    }
+    function showDashboard() {
+      $('loginView').classList.add('hidden'); $('loginView').classList.remove('flex');
+      $('dashView').classList.remove('hidden'); $('dashView').classList.add('flex');
+      renderHeader();
+      loadDashboard();
+    }
+
+    /* ================= Login ================= */
+    function showLoginError(msg) {
+      const box = $('loginError');
+      $('loginErrorText').textContent = msg || '';
+      box.classList.toggle('hidden', !msg);
+      box.classList.toggle('flex', !!msg);
+      if (msg) { box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake'); }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const now = Date.now();
+      if (now < state.lockedUntil) {
+        showLoginError(`Too many attempts. Please wait ${Math.ceil((state.lockedUntil - now) / 1000)} seconds and try again.`);
+        return;
+      }
+
+      const adm = $('admissionNo').value.trim().toUpperCase();
+      const pin = $('pin').value;
+      if (!adm || !pin) { showLoginError('Enter your admission number and PIN.'); return; }
+
+      const btn = $('loginBtn');
+      setLoading(btn, true, 'Signing in…');
+      showLoginError('');
+      try {
+        const { data, error } = await supabase
+          .from('students')
+          .select('id, full_name, admission_no, batch_id')
+          .eq('admission_no', adm)
+          .eq('pin', pin)
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+
+        if (!data) {
+          state.failedAttempts++;
+          if (state.failedAttempts >= MAX_ATTEMPTS) {
+            state.lockedUntil = Date.now() + LOCKOUT_MS;
+            state.failedAttempts = 0;
+            showLoginError('Too many incorrect attempts. Please wait 30 seconds before trying again.');
+          } else {
+            showLoginError('Invalid admission number or PIN. Please check and try again.');
+          }
+          $('pin').select();
+          return;
+        }
+
+        state.failedAttempts = 0;
+        if (!writeSession(data)) toast('Your browser blocked saving the session. You may need to sign in again after refreshing.', 'info', 6000);
+        state.student = data;
+        $('pin').value = '';
+        toast(`Welcome, ${data.full_name.split(' ')[0]}!`, 'success', 2500);
+        showDashboard();
+      } catch (err) {
+        console.error('Student login failed:', err);
+        showLoginError('We couldn\'t sign you in right now. Check your connection and try again.');
+        toast(err?.message || 'Sign-in failed.', 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    function signOut() {
+      clearSession();
+      Object.assign(state, { student: null, batchName: '', todayRecord: null, attendance: [], marks: [] });
+      $('admissionNo').value = '';
+      showLogin();
+      toast('You have been signed out.', 'info', 2500);
+    }
+
+    /* ================= Header ================= */
+    function renderHeader() {
+      const s = state.student;
+      $('navName').textContent = s.full_name;
+      $('navAvatar').textContent = initials(s.full_name);
+      $('navBatch').textContent = state.batchName || (s.batch_id ? 'Batch' : 'No batch');
+      $('greeting').textContent = `Hi, ${s.full_name.split(' ')[0]}`;
+      $('todayLabel').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    /* ================= Data loading ================= */
+    async function fetchAttendance() {
+      const { data, error } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('student_id', state.student.id)
+        .order('date', { ascending: false })
+        .limit(2000);
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function fetchMarks() {
+      const { data, error } = await supabase
+        .from('marks')
+        .select('id, marks_obtained, remarks, exams!inner(id, title, exam_date, max_marks, status)')
+        .eq('student_id', state.student.id)
+        .ilike('exams.status', 'published');
+      if (error) throw error;
+      return (data || [])
+        .filter((m) => m.exams && statusKey(m.exams.status) === 'published')
+        .sort((a, b) => String(b.exams.exam_date || '').localeCompare(String(a.exams.exam_date || '')));
+    }
+
+    async function loadDashboard({ silent = false } = {}) {
+      const seq = ++state.loadSeq;
+      const s = state.student;
+      if (!s) return;
+      state.today = todayStr();
+      $('refreshIcon').classList.add('animate-spin');
+      if (!silent) renderSkeletons();
+
+      const [batchRes, centreRes, attRes, marksRes] = await Promise.allSettled([
+        s.batch_id ? supabase.from('batches').select('name').eq('id', s.batch_id).maybeSingle() : Promise.resolve({ data: null }),
+        supabase.from('centre_settings').select('centre_name').limit(1).maybeSingle(),
+        fetchAttendance(),
+        fetchMarks()
+      ]);
+      if (seq !== state.loadSeq || !state.student) return;
+
+      if (batchRes.status === 'fulfilled' && batchRes.value?.data?.name) state.batchName = batchRes.value.data.name;
+      if (centreRes.status === 'fulfilled' && centreRes.value?.data?.centre_name) $('centreName').textContent = centreRes.value.data.centre_name;
+
+      if (attRes.status === 'fulfilled') {
+        state.attendance = attRes.value;
+        state.attendanceOk = true; state.attendanceErr = '';
+      } else {
+        console.error('Attendance load failed:', attRes.reason);
+        state.attendanceOk = false; state.attendanceErr = attRes.reason?.message || 'Unknown error.';
+        toast('Could not load your attendance.', 'error');
+      }
+      if (marksRes.status === 'fulfilled') {
+        state.marks = marksRes.value;
+        state.marksOk = true; state.marksErr = '';
+      } else {
+        console.error('Marks load failed:', marksRes.reason);
+        state.marksOk = false; state.marksErr = marksRes.reason?.message || 'Unknown error.';
+        toast('Could not load your exam results.', 'error');
+      }
+
+      state.todayRecord = state.attendance.find((r) => String(r.date).slice(0, 10) === state.today) || null;
+      renderHeader();
+      renderAll();
+      $('refreshIcon').classList.remove('animate-spin');
+    }
+
+    /* ================= Rendering ================= */
+    function renderSkeletons() {
+      $('hero').innerHTML = `<div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"><div class="skeleton h-5 w-48"></div><div class="skeleton mt-4 h-16 w-full max-w-sm"></div><div class="skeleton mt-4 h-10 w-full max-w-sm"></div></div>`;
+      const rows = (n, cols) => Array.from({ length: n }, () => `<div class="flex gap-4 px-5 py-4">${Array.from({ length: cols }, () => '<div class="skeleton h-4 flex-1"></div>').join('')}</div>`).join('');
+      $('resultsBody').innerHTML = `<div class="divide-y divide-slate-200">${rows(3, 4)}</div>`;
+      $('logBody').innerHTML = `<div class="divide-y divide-slate-200">${rows(4, 3)}</div>`;
+    }
+
+    function renderAll() {
+      renderHero();
+      renderMetrics();
+      renderResults();
+      renderLog();
+    }
+
+    const ICON_CHECK = '<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+
+    function renderHero() {
+      const hero = $('hero');
+      const rec = state.todayRecord;
+
+      if (rec) {
+        const k = statusKey(rec.status);
+        const t = fmtTime(rec.marked_at || rec.created_at);
+        if (k === 'present') {
+          hero.innerHTML = `<div class="pop flex items-center gap-4 rounded-lg border border-emerald-200 bg-emerald-50 p-5 shadow-sm sm:p-6">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">${ICON_CHECK}</div>
+            <div class="min-w-0">
+              <p class="text-base font-semibold text-emerald-900">Attendance Marked for Today (Present)</p>
+              <p class="mt-0.5 text-sm text-emerald-800/80">${t ? `Checked in at ${esc(t)} · ` : ''}${esc(methodLabel(rec.method))}. You're all set for today.</p>
+            </div>
+          </div>`;
+        } else {
+          const label = k === 'excused' ? 'Excused' : (k === 'absent' ? 'Absent' : (rec.status || 'Recorded'));
+          hero.innerHTML = `<div class="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${k === 'excused' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}">
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div class="min-w-0">
+              <p class="text-base font-semibold">Today's attendance is recorded as ${esc(label)}</p>
+              <p class="mt-0.5 text-sm text-slate-500">If this looks wrong, please speak to your teacher.</p>
+            </div>
+          </div>`;
+        }
+        return;
+      }
+
+      if (!state.attendanceOk) {
+        hero.innerHTML = `<div class="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
+          <p class="text-sm font-medium text-red-700">Couldn't check today's attendance.</p>
+          <p class="mt-1 text-sm text-slate-500">${esc(state.attendanceErr)}</p>
+          <button type="button" data-retry class="mt-4 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Try again</button>
+        </div>`;
+        return;
+      }
+
+      hero.innerHTML = `<form id="checkinForm" class="rounded-lg border border-slate-200 bg-white shadow-sm" novalidate>
+        <div class="flex flex-col items-center px-5 py-7 text-center sm:px-6">
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Not checked in yet</span>
+          <h2 class="mt-3 text-lg font-semibold tracking-tight">Mark today's attendance</h2>
+          <p class="mt-1 max-w-sm text-sm text-slate-500">Enter the 5-digit code shared by your teacher in class.</p>
+          <label for="codeInput" class="sr-only">5-digit attendance code</label>
+          <input id="codeInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="one-time-code" placeholder="•••••"
+            class="mt-5 block w-full max-w-xs rounded-lg border border-slate-300 bg-white px-4 py-3.5 text-center font-mono text-4xl font-bold tracking-[0.35em] text-slate-900 placeholder-slate-300 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+          <p id="codeError" class="mt-2 hidden min-h-[1.25rem] text-sm text-red-600" role="alert"></p>
+          <button id="checkinBtn" type="submit" disabled class="mt-4 inline-flex w-full max-w-xs items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+            <svg class="btn-spinner hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".3" stroke-width="3"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>
+            <span class="btn-label">Check In</span>
+          </button>
+        </div>
+      </form>`;
+    }
+
+    function computeMetrics() {
+      let present = 0, absent = 0, excused = 0;
+      state.attendance.forEach((r) => {
+        const k = statusKey(r.status);
+        if (k === 'present') present++; else if (k === 'absent') absent++; else if (k === 'excused') excused++;
+      });
+      const counted = present + absent;
+      const rate = counted ? Math.round((present / counted) * 1000) / 10 : null;
+
+      const max = (m) => Number(m.exams?.max_marks);
+      const scored = state.marks.filter((m) => m.marks_obtained !== null && m.marks_obtained !== undefined && max(m) > 0);
+      const avg = scored.length ? scored.reduce((a, m) => a + (Number(m.marks_obtained) / max(m)) * 100, 0) / scored.length : null;
+      return { present, absent, excused, counted, rate, avg, scoredCount: scored.length };
+    }
+
+    function renderMetrics() {
+      const m = computeMetrics();
+      const na = '<span class="text-slate-300">—</span>';
+
+      if (!state.attendanceOk) {
+        $('mRate').innerHTML = na; $('mRateSub').textContent = 'Unavailable';
+        $('mAttended').innerHTML = na; $('mAttendedSub').textContent = 'Unavailable';
+      } else {
+        $('mRate').textContent = m.rate === null ? '—' : m.rate.toFixed(1).replace(/\.0$/, '') + '%';
+        $('mRateSub').textContent = m.counted ? `${m.present} of ${m.counted} classes${m.excused ? ` · ${m.excused} excused not counted` : ''}` : 'No classes recorded yet';
+        $('mAttended').textContent = String(m.present);
+        $('mAttendedSub').textContent = m.present === 1 ? '1 day present' : `${m.present} days present`;
+      }
+
+      if (!state.marksOk) {
+        $('mScore').innerHTML = na; $('mScoreSub').textContent = 'Unavailable';
+      } else {
+        $('mScore').textContent = m.avg === null ? '—' : m.avg.toFixed(1).replace(/\.0$/, '') + '%';
+        $('mScoreSub').textContent = m.scoredCount ? `Across ${m.scoredCount} published exam${m.scoredCount === 1 ? '' : 's'}` : 'No published results yet';
+      }
+    }
+
+    function pctPill(num, max) {
+      if (num === null || num === undefined || !(max > 0)) return '<span class="text-slate-300">—</span>';
+      const pct = (Number(num) / max) * 100;
+      const cls = pct < 40 ? 'border-red-200 bg-red-50 text-red-700' : pct < 60 ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700';
+      return `<span class="tabular inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${cls}">${pct.toFixed(1).replace(/\.0$/, '')}%</span>`;
+    }
+
+    function renderResults() {
+      const body = $('resultsBody');
+      if (!state.marksOk) {
+        body.innerHTML = `<div class="px-6 py-10 text-center"><p class="text-sm font-medium text-red-700">Couldn't load your results.</p><p class="mt-1 text-sm text-slate-500">${esc(state.marksErr)}</p><button type="button" data-retry class="mt-4 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Try again</button></div>`;
+        return;
+      }
+      if (!state.marks.length) {
+        body.innerHTML = `<div class="flex flex-col items-center px-6 py-12 text-center">
+          <svg class="h-20 w-20 text-slate-300" viewBox="0 0 96 96" fill="none" aria-hidden="true">
+            <rect x="22" y="12" width="52" height="68" rx="6" stroke="currentColor" stroke-width="2"/>
+            <path d="M33 32h30M33 44h30M33 56h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="68" cy="68" r="14" fill="#f8fafc" stroke="currentColor" stroke-width="2"/>
+            <path d="M68 61v8l5 3" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <h3 class="mt-3 text-sm font-semibold">No published results yet</h3>
+          <p class="mt-1 max-w-xs text-sm text-slate-500">Your exam results will appear here once your teachers publish them.</p>
+        </div>`;
+        return;
+      }
+
+      const rowsDesktop = state.marks.map((m) => {
+        const e = m.exams, max = Number(e.max_marks);
+        const has = m.marks_obtained !== null && m.marks_obtained !== undefined;
+        return `<tr class="hover:bg-slate-50/70">
+          <td class="px-5 py-3 font-medium text-slate-900">${esc(e.title)}</td>
+          <td class="whitespace-nowrap px-4 py-3 text-slate-600">${esc(fmtDate(e.exam_date))}</td>
+          <td class="tabular whitespace-nowrap px-4 py-3 text-slate-900"><span class="font-semibold">${has ? esc(fmtNum(m.marks_obtained)) : '—'}</span> <span class="text-slate-400">/ ${esc(fmtNum(max))}</span></td>
+          <td class="whitespace-nowrap px-4 py-3">${pctPill(has ? m.marks_obtained : null, max)}</td>
+          <td class="px-5 py-3 text-slate-600">${m.remarks ? esc(m.remarks) : '<span class="text-slate-300">—</span>'}</td>
+        </tr>`;
+      }).join('');
+
+      const cardsMobile = state.marks.map((m) => {
+        const e = m.exams, max = Number(e.max_marks);
+        const has = m.marks_obtained !== null && m.marks_obtained !== undefined;
+        return `<li class="px-5 py-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0"><p class="font-medium text-slate-900">${esc(e.title)}</p><p class="mt-0.5 text-xs text-slate-500">${esc(fmtDate(e.exam_date))}</p></div>
+            ${pctPill(has ? m.marks_obtained : null, max)}
+          </div>
+          <p class="tabular mt-2 text-sm text-slate-900"><span class="font-semibold">${has ? esc(fmtNum(m.marks_obtained)) : '—'}</span> <span class="text-slate-400">/ ${esc(fmtNum(max))} marks</span></p>
+          ${m.remarks ? `<p class="mt-1.5 rounded-md bg-slate-50 px-2.5 py-1.5 text-xs text-slate-600">${esc(m.remarks)}</p>` : ''}
+        </li>`;
+      }).join('');
+
+      body.innerHTML = `
+        <div class="hidden overflow-x-auto sm:block">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50"><tr class="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <th scope="col" class="px-5 py-3">Exam</th><th scope="col" class="px-4 py-3">Date</th><th scope="col" class="px-4 py-3">Marks</th><th scope="col" class="px-4 py-3">Percentage</th><th scope="col" class="px-5 py-3">Remarks</th>
+            </tr></thead>
+            <tbody class="divide-y divide-slate-200 bg-white">${rowsDesktop}</tbody>
+          </table>
+        </div>
+        <ul class="divide-y divide-slate-200 sm:hidden">${cardsMobile}</ul>`;
+    }
+
+    function methodLabel(m) {
+      const k = String(m || '').toLowerCase();
+      return (k === 'code' || k === 'daily code' || k === 'daily_code') ? 'Daily Code' : 'Manual';
+    }
+    function statusBadge(s) {
+      const k = statusKey(s);
+      const map = {
+        present: ['border-emerald-200 bg-emerald-50 text-emerald-700', 'bg-emerald-500', 'Present'],
+        absent:  ['border-red-200 bg-red-50 text-red-700', 'bg-red-500', 'Absent'],
+        excused: ['border-amber-200 bg-amber-50 text-amber-700', 'bg-amber-500', 'Excused']
+      }[k];
+      if (!map) return `<span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600">${esc(s || '—')}</span>`;
+      return `<span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${map[0]}"><span class="h-1.5 w-1.5 rounded-full ${map[1]}"></span>${map[2]}</span>`;
+    }
+
+    function renderLog() {
+      const body = $('logBody');
+      if (!state.attendanceOk) {
+        body.innerHTML = `<div class="px-6 py-10 text-center"><p class="text-sm font-medium text-red-700">Couldn't load your attendance.</p><p class="mt-1 text-sm text-slate-500">${esc(state.attendanceErr)}</p><button type="button" data-retry class="mt-4 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Try again</button></div>`;
+        return;
+      }
+      const recent = state.attendance.slice(0, 10);
+      if (!recent.length) {
+        body.innerHTML = `<div class="flex flex-col items-center px-6 py-12 text-center">
+          <svg class="h-14 w-14 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z" /></svg>
+          <h3 class="mt-3 text-sm font-semibold">No attendance records yet</h3>
+          <p class="mt-1 max-w-xs text-sm text-slate-500">Once you check in to a class, it will show up here.</p>
+        </div>`;
+        return;
+      }
+      body.innerHTML = `<ul class="divide-y divide-slate-200">${recent.map((r) => {
+        const t = fmtTime(r.marked_at || r.created_at);
+        return `<li class="flex items-center justify-between gap-3 px-5 py-3">
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-slate-900">${esc(fmtDate(r.date))} <span class="font-normal text-slate-400">· ${esc(fmtWeekday(r.date))}</span></p>
+            <p class="mt-0.5 text-xs text-slate-500">${esc(methodLabel(r.method))}${t ? ' · ' + esc(t) : ''}</p>
+          </div>
+          ${statusBadge(r.status)}
+        </li>`;
+      }).join('')}</ul>`;
+    }
+
+    /* ================= Check-in ================= */
+    function setCodeError(msg) {
+      const el = $('codeError'), input = $('codeInput');
+      if (!el) return;
+      el.textContent = msg || '';
+      el.classList.toggle('hidden', !msg);
+      input.classList.toggle('border-red-500', !!msg);
+      if (msg) { input.classList.remove('shake'); void input.offsetWidth; input.classList.add('shake'); }
+    }
+
+    // The RPC may return void, a boolean, a string, an object, or a one-row table; interpret all of them.
+    function interpretRpc(data) {
+      let d = Array.isArray(data) ? data[0] : data;
+      if (d === false) return { ok: false, message: 'That code is invalid or has expired.' };
+      if (d && typeof d === 'object') {
+        if (d.success === false || d.ok === false || d.error) return { ok: false, message: d.message || d.error || 'Check-in failed.' };
+        return { ok: true, message: d.message || '' };
+      }
+      if (typeof d === 'string' && /invalid|expired|incorrect|wrong/i.test(d)) return { ok: false, message: d };
+      return { ok: true, message: typeof d === 'string' ? d : '' };
+    }
+
+    async function handleCheckin(e) {
+      e.preventDefault();
+      if (state.checkingIn) return;
+      const code = $('codeInput').value.trim();
+      if (!/^\d{5}$/.test(code)) { setCodeError('Enter the 5-digit code.'); return; }
+
+      const btn = $('checkinBtn');
+      state.checkingIn = true;
+      setCodeError('');
+      setLoading(btn, true, 'Checking in…');
+      try {
+        const { data, error } = await supabase.rpc('mark_student_attendance', { p_student_id: state.student.id, p_code: code });
+        if (error) throw error;
+        const result = interpretRpc(data);
+        if (!result.ok) { setCodeError(result.message); toast(result.message, 'error'); $('codeInput').select(); return; }
+
+        // Update the UI immediately, then sync from the database
+        const optimistic = { date: state.today, status: 'present', method: 'code', marked_at: new Date().toISOString(), student_id: state.student.id };
+        state.attendance = [optimistic, ...state.attendance.filter((r) => String(r.date).slice(0, 10) !== state.today)];
+        state.attendanceOk = true;
+        state.todayRecord = optimistic;
+        renderAll();
+        toast(result.message || 'Attendance marked. Have a great class!', 'success');
+
+        try {
+          const fresh = await fetchAttendance();
+          const hasToday = fresh.some((r) => String(r.date).slice(0, 10) === state.today);
+          state.attendance = hasToday ? fresh : [optimistic, ...fresh];
+          state.todayRecord = state.attendance.find((r) => String(r.date).slice(0, 10) === state.today) || optimistic;
+          renderAll();
+        } catch (syncErr) {
+          console.warn('Post-check-in sync failed:', syncErr);
+        }
+      } catch (err) {
+        console.error('Check-in failed:', err);
+        const msg = err?.message || 'Check-in failed. Please try again.';
+        setCodeError(msg);
+        toast(msg, 'error');
+      } finally {
+        state.checkingIn = false;
+        // The form is replaced on success; only touch the button if it still exists
+        if (document.body.contains(btn)) {
+          setLoading(btn, false);
+          btn.disabled = !/^\d{5}$/.test($('codeInput')?.value || '');
+        }
+      }
+    }
+
+    /* ================= Events ================= */
+    function bindEvents() {
+      $('loginForm').addEventListener('submit', handleLogin);
+      $('signOutBtn').addEventListener('click', signOut);
+      $('refreshBtn').addEventListener('click', () => loadDashboard());
+      $('pinToggle').addEventListener('click', () => {
+        const input = $('pin');
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        $('pinToggle').setAttribute('aria-label', show ? 'Hide PIN' : 'Show PIN');
+      });
+      $('admissionNo').addEventListener('input', () => showLoginError(''));
+      $('pin').addEventListener('input', () => showLoginError(''));
+
+      // Delegated handlers for dynamically rendered content
+      $('hero').addEventListener('submit', (e) => { if (e.target.id === 'checkinForm') handleCheckin(e); });
+      $('hero').addEventListener('input', (e) => {
+        if (e.target.id !== 'codeInput') return;
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+        $('checkinBtn').disabled = e.target.value.length !== 5 || state.checkingIn;
+        setCodeError('');
+      });
+      $('dashView').addEventListener('click', (e) => { if (e.target.closest('[data-retry]')) loadDashboard(); });
+
+      // Sign out in another tab
+      window.addEventListener('storage', (e) => {
+        if (e.key === SESSION_KEY && !e.newValue && state.student) {
+          Object.assign(state, { student: null, attendance: [], marks: [], todayRecord: null });
+          showLogin();
+        }
+      });
+
+      // Refresh when returning to the tab, especially after midnight rollover
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden || !state.student) return;
+        loadDashboard({ silent: state.today === todayStr() });
+      });
+    }
+
+    /* ================= Init ================= */
+    (function init() {
+      bindEvents();
+      const saved = readSession();
+      if (saved) {
+        state.student = saved;
+        showDashboard();
+      } else {
+        if (localStorage.getItem(SESSION_KEY)) clearSession(); // drop corrupted data
+        showLogin();
+      }
+    })();
+  </script>
+</body>
+</html>

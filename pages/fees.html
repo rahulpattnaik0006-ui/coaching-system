@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fees · Coaching Centre Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-900 antialiased">
+
+  <!-- Auth check overlay -->
+  <div id="auth-overlay" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-50">
+    <div class="flex items-center gap-2.5 text-sm text-slate-500">
+      <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      Verifying session…
+    </div>
+  </div>
+
+  <!-- Mobile nav backdrop -->
+  <div id="nav-backdrop" class="fixed inset-0 z-30 hidden bg-slate-900/40 lg:hidden"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0">
+    <div class="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
+      <div class="flex h-8 w-8 items-center justify-center rounded-md bg-slate-900 text-white">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v11.494m0-11.494C10.832 5.477 9.246 5 7.5 5 5.754 5 4.168 5.477 3 6.253v11.494C4.168 16.977 5.754 16.5 7.5 16.5c1.746 0 3.332.477 4.5 1.253m0-11.5C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v11.494c-1.168-.776-2.753-1.253-4.5-1.253-1.746 0-3.332.477-4.5 1.253"/></svg>
+      </div>
+      <div class="leading-tight">
+        <p class="text-sm font-semibold text-slate-900">Coaching Centre</p>
+        <p class="text-xs text-slate-500">Admin Portal</p>
+      </div>
+    </div>
+
+    <nav class="space-y-1 px-3 py-4">
+        <a href="admin.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10" /></svg>
+          Dashboard
+        </a>
+        <a href="attendance.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+          Attendance
+        </a>
+        <a href="teachers.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+          Teachers
+        </a>
+        <a href="students.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          Students
+        </a>
+        <a href="batches.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+          Batches
+        </a>
+        <a href="fees.html" aria-current="page" class="flex items-center gap-3 rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+          Fees
+        </a>
+        <a href="exams.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+          Exams
+        </a>
+        <a href="settings.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          Settings
+        </a>
+      </nav>
+
+    <div class="border-t border-slate-200 p-4">
+      <div class="flex items-center gap-3">
+        <div id="sidebar-avatar" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">–</div>
+        <div class="min-w-0 flex-1">
+          <p id="sidebar-name" class="truncate text-sm font-medium text-slate-900">Loading…</p>
+          <span id="sidebar-role" class="mt-0.5 inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-600">–</span>
+        </div>
+      </div>
+      <button type="button" id="signout-btn" class="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 disabled:cursor-not-allowed disabled:opacity-60">
+        <svg id="signout-icon" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        <svg id="signout-spinner" class="hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+        <span id="signout-label">Sign out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="lg:pl-64">
+
+    <!-- Top header -->
+    <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div class="flex min-h-16 items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <button type="button" id="menu-btn" class="-ml-1 rounded-md p-2 text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 lg:hidden" aria-label="Open navigation">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="min-w-0 flex-1">
+          <h1 class="truncate text-base font-semibold text-slate-900 sm:text-lg">Fees &amp; Transactions</h1>
+          <p class="hidden truncate text-sm text-slate-500 sm:block">Track fee collections, outstanding dues, and payment records</p>
+        </div>
+        <button type="button" id="record-btn" class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          Record Payment
+        </button>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl space-y-4 px-4 py-6 sm:px-6 lg:px-8">
+
+      <!-- Metrics -->
+      <section aria-label="Summary" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-slate-500">Total Collected</p>
+            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          </div>
+          <p id="m-collected" class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">—</p>
+          <p id="m-collected-sub" class="mt-1 text-xs text-slate-500">All recorded payments</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-slate-500">Pending Dues</p>
+            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <p id="m-pending" class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">—</p>
+          <p id="m-pending-sub" class="mt-1 text-xs text-slate-500">Based on monthly batch fees</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-slate-500">Total Transactions</p>
+            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          </div>
+          <p id="m-count" class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">—</p>
+          <p id="m-count-sub" class="mt-1 text-xs text-slate-500">Payment records</p>
+        </div>
+      </section>
+
+      <!-- Control bar -->
+      <section class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:p-4" aria-label="Filters">
+        <div class="relative flex-1">
+          <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg>
+          </span>
+          <label for="search" class="sr-only">Search payments</label>
+          <input id="search" type="search" autocomplete="off" placeholder="Search by student name or remarks"
+            class="block w-full rounded-md border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900" />
+        </div>
+        <div>
+          <label for="filter-mode" class="sr-only">Filter by payment mode</label>
+          <select id="filter-mode" class="block w-full rounded-md border border-slate-300 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 sm:w-48">
+            <option value="">All payment modes</option>
+            <option value="UPI">UPI</option>
+            <option value="Cash">Cash</option>
+            <option value="Net Banking">Net Banking</option>
+            <option value="Cheque">Cheque</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Table -->
+      <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-label="Payment records">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+              <tr>
+                <th scope="col" class="px-5 py-3">Student</th>
+                <th scope="col" class="px-5 py-3">Batch</th>
+                <th scope="col" class="px-5 py-3 text-right">Amount Paid</th>
+                <th scope="col" class="px-5 py-3">Mode</th>
+                <th scope="col" class="px-5 py-3">Date</th>
+                <th scope="col" class="px-5 py-3">Remarks</th>
+                <th scope="col" class="px-5 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="fees-body" class="divide-y divide-slate-100 bg-white"></tbody>
+          </table>
+        </div>
+
+        <!-- Empty / error state -->
+        <div id="state-box" class="hidden flex-col items-center justify-center px-6 py-16 text-center">
+          <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-400">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          </div>
+          <h3 id="state-title" class="text-sm font-semibold text-slate-900"></h3>
+          <p id="state-text" class="mt-1 max-w-sm text-sm text-slate-500"></p>
+          <button type="button" id="state-action" class="mt-4 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"></button>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3 text-xs text-slate-500">
+          <p id="result-count" aria-live="polite">&nbsp;</p>
+          <p id="result-total"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Record payment slide-over -->
+  <div id="panel-backdrop" class="fixed inset-0 z-40 hidden bg-slate-900/40"></div>
+  <aside id="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title"
+    class="fixed inset-y-0 right-0 z-50 flex w-full max-w-md translate-x-full flex-col border-l border-slate-200 bg-white shadow-xl transition-transform duration-200">
+    <div class="flex items-start justify-between border-b border-slate-200 px-6 py-4">
+      <div>
+        <h2 id="panel-title" class="text-base font-semibold text-slate-900">Record Payment</h2>
+        <p class="mt-0.5 text-sm text-slate-500">Log a fee payment received from a student.</p>
+      </div>
+      <button type="button" id="panel-close" class="-mr-2 rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900" aria-label="Close panel">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <form id="payment-form" class="flex min-h-0 flex-1 flex-col" novalidate>
+      <div class="flex-1 space-y-4 overflow-y-auto px-6 py-5">
+        <div id="form-error" role="alert" class="hidden items-start gap-2.5 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800">
+          <svg class="mt-0.5 h-4 w-4 shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+          <p id="form-error-text" class="flex-1 leading-5"></p>
+        </div>
+
+        <div>
+          <label for="f-student" class="mb-1.5 block text-sm font-medium text-slate-700">Student <span class="text-red-600">*</span></label>
+          <select id="f-student" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-50 disabled:text-slate-500">
+            <option value="">Select a student</option>
+          </select>
+        </div>
+
+        <!-- Student fee context -->
+        <div id="student-hint" class="hidden rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
+          <dl class="grid grid-cols-2 gap-x-4 gap-y-1.5">
+            <dt class="text-slate-500">Batch</dt><dd id="h-batch" class="text-right font-medium text-slate-900"></dd>
+            <dt class="text-slate-500">Monthly fee</dt><dd id="h-fee" class="text-right font-medium text-slate-900"></dd>
+            <dt class="text-slate-500">Paid this month</dt><dd id="h-paid" class="text-right font-medium text-slate-900"></dd>
+            <dt class="text-slate-500">Balance this month</dt><dd id="h-balance" class="text-right font-medium text-slate-900"></dd>
+            <dt class="text-slate-500">Current fee status</dt><dd id="h-status" class="text-right font-medium text-slate-900"></dd>
+          </dl>
+          <p id="h-change" class="mt-2 hidden border-t border-slate-200 pt-2 text-slate-600"></p>
+        </div>
+
+        <div>
+          <label for="f-amount" class="mb-1.5 block text-sm font-medium text-slate-700">Amount (₹) <span class="text-red-600">*</span></label>
+          <div class="relative">
+            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-slate-500">₹</span>
+            <input id="f-amount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"
+              class="block w-full rounded-md border border-slate-300 bg-white py-2 pl-7 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-50 disabled:text-slate-500" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label for="f-mode" class="mb-1.5 block text-sm font-medium text-slate-700">Payment mode</label>
+            <select id="f-mode" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-50 disabled:text-slate-500">
+              <option value="UPI">UPI</option>
+              <option value="Cash">Cash</option>
+              <option value="Net Banking">Net Banking</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+          <div>
+            <label for="f-date" class="mb-1.5 block text-sm font-medium text-slate-700">Payment date</label>
+            <input id="f-date" type="date"
+              class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-50 disabled:text-slate-500" />
+          </div>
+        </div>
+        <div>
+          <label for="f-remarks" class="mb-1.5 block text-sm font-medium text-slate-700">Remarks <span class="font-normal text-slate-400">(optional)</span></label>
+          <input id="f-remarks" type="text" maxlength="255" autocomplete="off" placeholder="e.g. October installment, receipt #1042"
+            class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-50 disabled:text-slate-500" />
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-4">
+        <button type="button" id="panel-cancel" class="rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 disabled:cursor-not-allowed disabled:opacity-60">Cancel</button>
+        <button type="submit" id="save-btn" class="inline-flex min-w-[96px] items-center justify-center gap-2 rounded-md bg-slate-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:opacity-80">
+          <svg id="save-spinner" class="hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+          <span id="save-label">Save</span>
+        </button>
+      </div>
+    </form>
+  </aside>
+
+  <!-- Delete confirm dialog -->
+  <div id="confirm" class="fixed inset-0 z-[55] hidden items-center justify-center p-4">
+    <div id="confirm-backdrop" class="absolute inset-0 bg-slate-900/40"></div>
+    <div role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" class="relative w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
+      <h3 id="confirm-title" class="text-base font-semibold text-slate-900">Delete payment record?</h3>
+      <p id="confirm-text" class="mt-2 text-sm text-slate-500"></p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" id="confirm-cancel" class="rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 disabled:opacity-60">Cancel</button>
+        <button type="button" id="confirm-ok" class="inline-flex items-center gap-2 rounded-md bg-red-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70">
+          <svg id="confirm-spinner" class="hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div id="toasts" class="pointer-events-none fixed bottom-4 right-4 z-[70] flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0" aria-live="polite"></div>
+
+  <script type="module">
+    import { supabase, getUserProfile, logoutUser } from '../js/auth.js';
+
+    /* ---------- Config ---------- */
+    const REDIRECT_URL = '../index.html';
+    const ALLOWED_ROLES = ['admin', 'teacher'];
+    const FEE_STATUSES = ['Pending', 'Partial', 'Paid'];            // ordered by progress
+    const FEE_COLUMNS = 'id, student_id, amount, payment_mode, payment_date, remarks, students(full_name, fee_status, batches(name, monthly_fee))';
+    const STUDENT_COLUMNS = 'id, full_name, fee_status, batch_id, batches(name, monthly_fee)';
+    const MODE_BADGE = {
+      'UPI': 'border-indigo-200 bg-indigo-50 text-indigo-700',
+      'Cash': 'border-emerald-200 bg-emerald-50 text-emerald-700',
+      'Net Banking': 'border-sky-200 bg-sky-50 text-sky-700',
+      'Cheque': 'border-amber-200 bg-amber-50 text-amber-700'
+    };
+
+    /* ---------- State ---------- */
+    let fees = [];
+    let students = [];
+    let studentsLoaded = false;
+    let loadError = null;
+    let isLoading = true;
+    let deleteTarget = null;
+    const filters = { q: '', mode: '' };
+
+    /* ---------- Elements ---------- */
+    const $ = (id) => document.getElementById(id);
+    const overlay = $('auth-overlay');
+    const tbody = $('fees-body');
+    const stateBox = $('state-box');
+    const searchInput = $('search');
+    const filterMode = $('filter-mode');
+    const panel = $('panel');
+    const panelBackdrop = $('panel-backdrop');
+    const form = $('payment-form');
+    const formError = $('form-error');
+    const saveBtn = $('save-btn');
+
+    /* ---------- Helpers ---------- */
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+
+    const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    const fmtINR = (n) => inr.format(Number(n) || 0);
+
+    function normalizeStatus(s) {
+      return FEE_STATUSES.find((x) => x.toLowerCase() === String(s ?? '').toLowerCase()) || 'Pending';
+    }
+    const rank = (s) => FEE_STATUSES.indexOf(normalizeStatus(s));
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function todayStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    }
+    const currentMonthKey = () => todayStr().slice(0, 7);
+
+    function fmtDate(value) {
+      if (!value) return '—';
+      const s = String(value);
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+      const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(s);
+      if (isNaN(d)) return '—';
+      return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function toast(message, type = 'success') {
+      const el = document.createElement('div');
+      const isErr = type === 'error';
+      el.className = 'pointer-events-auto flex items-start gap-2.5 rounded-md border bg-white px-3.5 py-3 text-sm shadow-lg ' +
+        (isErr ? 'border-red-200 text-red-800' : 'border-slate-200 text-slate-800');
+      el.innerHTML = (isErr
+        ? '<svg class="mt-0.5 h-4 w-4 shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>'
+        : '<svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>') +
+        '<p class="flex-1 leading-5">' + esc(message) + '</p>';
+      $('toasts').appendChild(el);
+      setTimeout(() => el.remove(), 4500);
+    }
+
+    /* ---------- Fee calculations ---------- */
+    // Payments recorded per student during the current calendar month.
+    function paidThisMonthMap() {
+      const key = currentMonthKey();
+      const map = new Map();
+      for (const f of fees) {
+        if (String(f.payment_date ?? '').slice(0, 7) !== key) continue;
+        const id = String(f.student_id);
+        map.set(id, (map.get(id) || 0) + (Number(f.amount) || 0));
+      }
+      return map;
+    }
+
+    const monthlyFeeOf = (s) => Number(s?.batches?.monthly_fee) || 0;
+
+    function computeMetrics() {
+      const totalCollected = fees.reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+      let pendingDues = null;
+      let studentsWithDues = 0;
+
+      if (studentsLoaded) {
+        pendingDues = 0;
+        const paid = paidThisMonthMap();
+        for (const s of students) {
+          const status = normalizeStatus(s.fee_status);
+          if (status === 'Paid') continue;
+          const fee = monthlyFeeOf(s);
+          const due = status === 'Pending' ? fee : Math.max(fee - (paid.get(String(s.id)) || 0), 0);
+          if (due > 0) { pendingDues += due; studentsWithDues += 1; }
+        }
+      }
+      return { totalCollected, pendingDues, studentsWithDues };
+    }
+
+    function renderMetrics() {
+      if (isLoading || loadError) {
+        $('m-collected').textContent = '—';
+        $('m-pending').textContent = '—';
+        $('m-count').textContent = '—';
+        return;
+      }
+      const m = computeMetrics();
+      $('m-collected').textContent = fmtINR(m.totalCollected);
+      $('m-count').textContent = fees.length.toLocaleString('en-IN');
+
+      if (m.pendingDues === null) {
+        $('m-pending').textContent = '—';
+        $('m-pending-sub').textContent = 'Could not load student data';
+      } else {
+        $('m-pending').textContent = fmtINR(m.pendingDues);
+        $('m-pending-sub').textContent = m.studentsWithDues + ' student' + (m.studentsWithDues === 1 ? '' : 's') + ' with dues';
+      }
+
+      const key = currentMonthKey();
+      const monthCount = fees.filter((f) => String(f.payment_date ?? '').slice(0, 7) === key).length;
+      $('m-count-sub').textContent = monthCount + ' this month';
+    }
+
+    // Returns the status a payment should upgrade the student to, or null if no change is needed.
+    function nextStatusFor(student, amount, dateStr) {
+      const fee = monthlyFeeOf(student);
+      if (!fee || !(amount > 0)) return null;
+      if (String(dateStr ?? '').slice(0, 7) !== currentMonthKey()) return null;
+      const paid = (paidThisMonthMap().get(String(student.id)) || 0) + amount;
+      const computed = paid >= fee ? 'Paid' : 'Partial';
+      return rank(computed) > rank(student.fee_status) ? computed : null;
+    }
+
+    /* ---------- Sidebar (mobile) ---------- */
+    const sidebar = $('sidebar');
+    const navBackdrop = $('nav-backdrop');
+    const openNav = () => { sidebar.classList.remove('-translate-x-full'); navBackdrop.classList.remove('hidden'); };
+    const closeNav = () => { sidebar.classList.add('-translate-x-full'); navBackdrop.classList.add('hidden'); };
+    $('menu-btn').addEventListener('click', openNav);
+    navBackdrop.addEventListener('click', closeNav);
+
+    /* ---------- Table rendering ---------- */
+    function skeletonRows() {
+      const bar = (w) => '<div class="h-3.5 animate-pulse rounded bg-slate-100 ' + w + '"></div>';
+      let html = '';
+      for (let i = 0; i < 6; i++) {
+        html += '<tr><td class="px-5 py-4">' + bar('w-36') + '</td><td class="px-5 py-4">' + bar('w-28') +
+          '</td><td class="px-5 py-4">' + bar('ml-auto w-20') + '</td><td class="px-5 py-4">' + bar('w-16') +
+          '</td><td class="px-5 py-4">' + bar('w-20') + '</td><td class="px-5 py-4">' + bar('w-32') +
+          '</td><td class="px-5 py-4">' + bar('ml-auto w-8') + '</td></tr>';
+      }
+      return html;
+    }
+
+    function getFiltered() {
+      const q = filters.q.trim().toLowerCase();
+      return fees.filter((f) => {
+        if (filters.mode && f.payment_mode !== filters.mode) return false;
+        if (q) {
+          const hay = (String(f.students?.full_name ?? '') + ' ' + String(f.remarks ?? '')).toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+    }
+
+    function showState({ title, text, action, onAction }) {
+      $('state-title').textContent = title;
+      $('state-text').textContent = text;
+      const btn = $('state-action');
+      if (action) {
+        btn.textContent = action;
+        btn.classList.remove('hidden');
+        btn.onclick = onAction;
+      } else {
+        btn.classList.add('hidden');
+      }
+      stateBox.classList.remove('hidden');
+      stateBox.classList.add('flex');
+    }
+    function hideState() {
+      stateBox.classList.add('hidden');
+      stateBox.classList.remove('flex');
+    }
+
+    function clearFilters() {
+      filters.q = ''; filters.mode = '';
+      searchInput.value = ''; filterMode.value = '';
+      render();
+    }
+
+    function render() {
+      renderMetrics();
+
+      if (isLoading) {
+        tbody.innerHTML = skeletonRows();
+        hideState();
+        $('result-count').textContent = 'Loading payments…';
+        $('result-total').textContent = '';
+        return;
+      }
+
+      if (loadError) {
+        tbody.innerHTML = '';
+        showState({ title: 'Could not load payments', text: loadError, action: 'Try again', onAction: loadData });
+        $('result-count').innerHTML = '&nbsp;';
+        $('result-total').textContent = '';
+        return;
+      }
+
+      const list = getFiltered();
+      $('result-count').textContent = 'Showing ' + list.length + ' of ' + fees.length + ' record' + (fees.length === 1 ? '' : 's');
+      $('result-total').textContent = list.length ? 'Total shown: ' + fmtINR(list.reduce((s, f) => s + (Number(f.amount) || 0), 0)) : '';
+
+      if (!list.length) {
+        tbody.innerHTML = '';
+        if (filters.q || filters.mode) {
+          showState({
+            title: 'No payments match your filters',
+            text: 'Try a different search term or clear the filters to see all records.',
+            action: 'Clear filters',
+            onAction: clearFilters
+          });
+        } else {
+          showState({
+            title: 'No payments recorded yet',
+            text: 'Record your first fee payment to start tracking collections.',
+            action: 'Record Payment',
+            onAction: () => openPanel()
+          });
+        }
+        return;
+      }
+
+      hideState();
+      tbody.innerHTML = list.map((f) => {
+        const name = f.students?.full_name || 'Deleted student';
+        const batch = f.students?.batches?.name;
+        const mode = f.payment_mode || '—';
+        const badge = MODE_BADGE[mode] || 'border-slate-200 bg-slate-50 text-slate-600';
+        return '<tr data-id="' + esc(f.id) + '" class="hover:bg-slate-50/60">' +
+          '<td class="whitespace-nowrap px-5 py-3.5"><div class="flex items-center gap-3">' +
+            '<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">' + esc(name.trim().charAt(0).toUpperCase()) + '</div>' +
+            '<span class="font-medium text-slate-900">' + esc(name) + '</span></div></td>' +
+          '<td class="whitespace-nowrap px-5 py-3.5 text-slate-600">' + (batch ? esc(batch) : '<span class="text-slate-400">Unassigned</span>') + '</td>' +
+          '<td class="whitespace-nowrap px-5 py-3.5 text-right font-medium tabular-nums text-slate-900">' + fmtINR(f.amount) + '</td>' +
+          '<td class="whitespace-nowrap px-5 py-3.5"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ' + badge + '">' + esc(mode) + '</span></td>' +
+          '<td class="whitespace-nowrap px-5 py-3.5 text-slate-600">' + fmtDate(f.payment_date) + '</td>' +
+          '<td class="max-w-[220px] truncate px-5 py-3.5 text-slate-600" title="' + esc(f.remarks || '') + '">' + (f.remarks ? esc(f.remarks) : '<span class="text-slate-400">—</span>') + '</td>' +
+          '<td class="whitespace-nowrap px-5 py-3.5 text-right">' +
+            '<button type="button" data-delete aria-label="Delete payment by ' + esc(name) + '" class="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600">' +
+              '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>' +
+            '</button></td></tr>';
+      }).join('');
+    }
+
+    /* ---------- Data ---------- */
+    function populateStudentSelect() {
+      const opts = students.map((s) => {
+        const b = s.batches?.name;
+        return '<option value="' + esc(s.id) + '">' + esc(s.full_name || 'Unnamed') + (b ? ' — ' + esc(b) : '') + '</option>';
+      }).join('');
+      $('f-student').innerHTML = '<option value="">Select a student</option>' + opts;
+    }
+
+    async function loadData() {
+      isLoading = true;
+      loadError = null;
+      render();
+
+      const [feeRes, studentRes] = await Promise.all([
+        supabase.from('fees').select(FEE_COLUMNS)
+          .order('payment_date', { ascending: false })
+          .order('id', { ascending: false }),
+        supabase.from('students').select(STUDENT_COLUMNS).order('full_name', { ascending: true })
+      ]);
+
+      if (studentRes.error) {
+        console.error('Students load failed:', studentRes.error);
+        studentsLoaded = false;
+        students = [];
+        toast('Could not load students: ' + studentRes.error.message, 'error');
+      } else {
+        studentsLoaded = true;
+        students = studentRes.data || [];
+        populateStudentSelect();
+      }
+
+      if (feeRes.error) {
+        console.error('Fees load failed:', feeRes.error);
+        loadError = feeRes.error.message || 'Something went wrong while fetching payments.';
+        fees = [];
+      } else {
+        fees = feeRes.data || [];
+      }
+
+      isLoading = false;
+      render();
+    }
+
+    /* ---------- Filters ---------- */
+    let searchTimer;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => { filters.q = searchInput.value; render(); }, 150);
+    });
+    filterMode.addEventListener('change', () => { filters.mode = filterMode.value; render(); });
+
+    /* ---------- Delete ---------- */
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-delete]');
+      if (!btn) return;
+      const row = btn.closest('tr');
+      const record = fees.find((f) => String(f.id) === row.dataset.id);
+      if (record) openConfirm(record);
+    });
+
+    const confirmEl = $('confirm');
+    function openConfirm(record) {
+      deleteTarget = record;
+      const name = record.students?.full_name || 'this student';
+      $('confirm-text').textContent = 'This will permanently remove the ' + fmtINR(record.amount) + ' payment from ' + name +
+        ' dated ' + fmtDate(record.payment_date) + '. The student\'s fee status will not be changed automatically.';
+      confirmEl.classList.remove('hidden');
+      confirmEl.classList.add('flex');
+      $('confirm-cancel').focus();
+    }
+    function closeConfirm() {
+      deleteTarget = null;
+      confirmEl.classList.add('hidden');
+      confirmEl.classList.remove('flex');
+    }
+    $('confirm-cancel').addEventListener('click', closeConfirm);
+    $('confirm-backdrop').addEventListener('click', () => { if (!$('confirm-ok').disabled) closeConfirm(); });
+    $('confirm-ok').addEventListener('click', async () => {
+      if (!deleteTarget) return;
+      const okBtn = $('confirm-ok');
+      okBtn.disabled = true;
+      $('confirm-cancel').disabled = true;
+      $('confirm-spinner').classList.remove('hidden');
+
+      const target = deleteTarget;
+      const { error } = await supabase.from('fees').delete().eq('id', target.id);
+
+      okBtn.disabled = false;
+      $('confirm-cancel').disabled = false;
+      $('confirm-spinner').classList.add('hidden');
+
+      if (error) {
+        console.error('Delete failed:', error);
+        toast('Could not delete record: ' + error.message, 'error');
+        return;
+      }
+
+      fees = fees.filter((f) => f.id !== target.id);
+      closeConfirm();
+      render();
+      toast('Payment record deleted.');
+    });
+
+    /* ---------- Record payment slide-over ---------- */
+    const formFields = ['f-student', 'f-amount', 'f-mode', 'f-date', 'f-remarks'].map($);
+
+    function setSaving(saving) {
+      formFields.forEach((f) => { f.disabled = saving; });
+      saveBtn.disabled = saving;
+      $('panel-cancel').disabled = saving;
+      $('save-spinner').classList.toggle('hidden', !saving);
+      $('save-label').textContent = saving ? 'Saving…' : 'Save';
+    }
+
+    function showFormError(msg) {
+      $('form-error-text').textContent = msg;
+      formError.classList.remove('hidden');
+      formError.classList.add('flex');
+    }
+    function hideFormError() {
+      formError.classList.add('hidden');
+      formError.classList.remove('flex');
+    }
+
+    function selectedStudent() {
+      const id = $('f-student').value;
+      return id ? students.find((s) => String(s.id) === id) : null;
+    }
+
+    function updateHint() {
+      const hint = $('student-hint');
+      const s = selectedStudent();
+      if (!s) { hint.classList.add('hidden'); return; }
+
+      const fee = monthlyFeeOf(s);
+      const paid = paidThisMonthMap().get(String(s.id)) || 0;
+      $('h-batch').textContent = s.batches?.name || 'Unassigned';
+      $('h-fee').textContent = fee ? fmtINR(fee) : '—';
+      $('h-paid').textContent = fmtINR(paid);
+      $('h-balance').textContent = fee ? fmtINR(Math.max(fee - paid, 0)) : '—';
+      $('h-status').textContent = normalizeStatus(s.fee_status);
+
+      const amount = Number($('f-amount').value);
+      const next = nextStatusFor(s, amount, $('f-date').value);
+      const note = $('h-change');
+      if (next) {
+        note.textContent = 'Saving will update fee status from ' + normalizeStatus(s.fee_status) + ' to ' + next + '.';
+        note.classList.remove('hidden');
+      } else {
+        note.classList.add('hidden');
+      }
+      hint.classList.remove('hidden');
+    }
+
+    $('f-student').addEventListener('change', updateHint);
+    $('f-amount').addEventListener('input', updateHint);
+    $('f-date').addEventListener('change', updateHint);
+
+    function openPanel() {
+      form.reset();
+      hideFormError();
+      setSaving(false);
+      $('f-mode').value = 'UPI';
+      $('f-date').value = todayStr();
+      $('f-date').max = todayStr();
+      $('student-hint').classList.add('hidden');
+      panelBackdrop.classList.remove('hidden');
+      panel.classList.remove('translate-x-full');
+      document.body.classList.add('overflow-hidden');
+      setTimeout(() => $('f-student').focus(), 150);
+    }
+    function closePanel() {
+      if (saveBtn.disabled) return;
+      panel.classList.add('translate-x-full');
+      panelBackdrop.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    $('record-btn').addEventListener('click', openPanel);
+    $('panel-close').addEventListener('click', closePanel);
+    $('panel-cancel').addEventListener('click', closePanel);
+    panelBackdrop.addEventListener('click', closePanel);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (!confirmEl.classList.contains('hidden')) { if (!$('confirm-ok').disabled) closeConfirm(); return; }
+      if (!panelBackdrop.classList.contains('hidden')) { closePanel(); return; }
+      closeNav();
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideFormError();
+
+      const student = selectedStudent();
+      const amountRaw = $('f-amount').value.trim();
+      const amount = Number(amountRaw);
+      const payment_mode = $('f-mode').value;
+      const payment_date = $('f-date').value || todayStr();
+      const remarks = $('f-remarks').value.trim();
+
+      if (!student) { showFormError('Please select a student.'); $('f-student').focus(); return; }
+      if (amountRaw === '' || isNaN(amount) || amount <= 0) {
+        showFormError('Enter a valid amount greater than zero.'); $('f-amount').focus(); return;
+      }
+      if (payment_date > todayStr()) {
+        showFormError('Payment date cannot be in the future.'); $('f-date').focus(); return;
+      }
+
+      // Work out the status change before the new payment is added to local state.
+      const nextStatus = nextStatusFor(student, amount, payment_date);
+
+      setSaving(true);
+
+      const { data, error } = await supabase
+        .from('fees')
+        .insert({ student_id: student.id, amount, payment_mode, payment_date, remarks: remarks || null })
+        .select(FEE_COLUMNS)
+        .single();
+
+      if (error) {
+        console.error('Record payment failed:', error);
+        setSaving(false);
+        showFormError(error.message || 'Could not record the payment. Please try again.');
+        return;
+      }
+
+      fees.unshift(data);
+      let statusWarning = false;
+
+      if (nextStatus) {
+        const { error: updateError } = await supabase
+          .from('students').update({ fee_status: nextStatus }).eq('id', student.id);
+        if (updateError) {
+          console.error('Fee status update failed:', updateError);
+          statusWarning = true;
+        } else {
+          student.fee_status = nextStatus;
+        }
+      }
+
+      setSaving(false);
+      closePanel();
+      render();
+
+      if (statusWarning) {
+        toast('Payment recorded, but the student\'s fee status could not be updated.', 'error');
+      } else if (nextStatus) {
+        toast(fmtINR(amount) + ' recorded. Fee status updated to ' + nextStatus + '.');
+      } else {
+        toast(fmtINR(amount) + ' payment recorded.');
+      }
+    });
+
+    /* ---------- Sign out ---------- */
+    $('signout-btn').addEventListener('click', async () => {
+      $('signout-btn').disabled = true;
+      $('signout-icon').classList.add('hidden');
+      $('signout-spinner').classList.remove('hidden');
+      $('signout-label').textContent = 'Signing out…';
+      try {
+        await logoutUser();
+      } catch (err) {
+        console.error('Sign out failed:', err);
+      } finally {
+        window.location.replace(REDIRECT_URL);
+      }
+    });
+
+    /* ---------- Init ---------- */
+    async function init() {
+      try {
+        const profile = await getUserProfile();
+        const role = String(profile?.role ?? '').toLowerCase();
+
+        if (!profile || !ALLOWED_ROLES.includes(role)) {
+          window.location.replace(REDIRECT_URL);
+          return;
+        }
+
+        const name = profile.full_name || profile.name || profile.email || 'User';
+        $('sidebar-name').textContent = name;
+        $('sidebar-role').textContent = role;
+        $('sidebar-avatar').textContent = name.trim().charAt(0).toUpperCase();
+        overlay.remove();
+      } catch (err) {
+        console.error('Session verification failed:', err);
+        window.location.replace(REDIRECT_URL);
+        return;
+      }
+
+      await loadData();
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('action') === 'record') {
+        openPanel();
+        params.delete('action');
+        const qs = params.toString();
+        history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

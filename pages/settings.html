@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Settings · Coaching Centre Management System</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { -webkit-font-smoothing: antialiased; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
+    @keyframes toast-out { to { opacity: 0; transform: translateY(-8px) scale(.98); } }
+    .toast-in { animation: toast-in .18s ease-out both; }
+    .toast-out { animation: toast-out .18s ease-in both; }
+    .skeleton { background: #e2e8f0; border-radius: 6px; animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: .5; } }
+  </style>
+</head>
+
+<body class="h-full bg-slate-50 font-sans text-slate-900">
+
+  <!-- Boot / auth-verification overlay -->
+  <div id="boot" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-50">
+    <div class="flex items-center gap-3 text-sm text-slate-500">
+      <svg class="h-4 w-4 animate-spin text-slate-900" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".2" stroke-width="3"></circle>
+        <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+      </svg>
+      Verifying session…
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toastRegion" class="pointer-events-none fixed right-4 top-4 z-50 flex w-full max-w-sm flex-col gap-2" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- Mobile sidebar backdrop -->
+  <div id="backdrop" class="fixed inset-0 z-30 hidden bg-slate-900/40 lg:hidden"></div>
+
+  <div class="flex min-h-full">
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+      class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0">
+      <div class="flex h-16 items-center gap-2.5 border-b border-slate-200 px-5">
+        <div class="flex h-8 w-8 items-center justify-center rounded-md bg-slate-900 text-white">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14v7m-6-4.5V12l6 3 6-3v4.5" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <p id="sidebarCentreName" class="truncate text-sm font-semibold leading-tight">Coaching Centre</p>
+          <p class="text-xs leading-tight text-slate-500">Management System</p>
+        </div>
+      </div>
+
+      <nav class="space-y-1 px-3 py-4">
+        <a href="admin.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10" /></svg>
+          Dashboard
+        </a>
+        <a href="attendance.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+          Attendance
+        </a>
+        <a href="teachers.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+          Teachers
+        </a>
+        <a href="students.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          Students
+        </a>
+        <a href="batches.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+          Batches
+        </a>
+        <a href="fees.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+          Fees
+        </a>
+        <a href="exams.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+          Exams
+        </a>
+        <a href="settings.html" aria-current="page" class="flex items-center gap-3 rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          Settings
+        </a>
+      </nav>
+
+      <div class="border-t border-slate-200 p-3">
+        <div class="flex items-center gap-3 rounded-md px-2 py-2">
+          <div id="userAvatar" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">··</div>
+          <div class="min-w-0 flex-1">
+            <p id="sidebarUserName" class="truncate text-sm font-medium leading-tight">Loading…</p>
+            <p id="sidebarUserRole" class="truncate text-xs capitalize leading-tight text-slate-500">&nbsp;</p>
+          </div>
+        </div>
+        <button id="signOutBtn" type="button"
+          class="mt-1 flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:opacity-60">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex min-w-0 flex-1 flex-col lg:pl-64">
+
+      <!-- Header -->
+      <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div class="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <button id="menuBtn" type="button" class="-ml-1 rounded-md p-2 text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 lg:hidden" aria-label="Open navigation">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+          <div class="min-w-0">
+            <h1 class="truncate text-base font-semibold leading-tight tracking-tight sm:text-lg">Settings</h1>
+            <p class="hidden truncate text-xs leading-tight text-slate-500 sm:block">Configure centre profile, branding, receipts, and account settings</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-4xl space-y-6">
+
+          <p class="text-xs text-slate-500 sm:hidden">Configure centre profile, branding, receipts, and account settings</p>
+
+          <!-- Section 1: Centre Profile & Branding -->
+          <section class="rounded-lg border border-slate-200 bg-white shadow-sm" aria-labelledby="sec-profile">
+            <div class="border-b border-slate-200 px-5 py-4 sm:px-6">
+              <h2 id="sec-profile" class="text-sm font-semibold">Centre Profile &amp; Branding</h2>
+              <p class="mt-0.5 text-sm text-slate-500">Shown on receipts, reports and communication from your centre.</p>
+            </div>
+
+            <form id="profileForm" novalidate>
+              <div class="space-y-5 px-5 py-5 sm:px-6">
+
+                <!-- loading skeleton -->
+                <div id="profileSkeleton" class="hidden space-y-4" aria-hidden="true">
+                  <div class="skeleton h-9 w-full"></div>
+                  <div class="skeleton h-9 w-full"></div>
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2"><div class="skeleton h-9"></div><div class="skeleton h-9"></div></div>
+                  <div class="skeleton h-20 w-full"></div>
+                </div>
+
+                <div id="profileFields" class="space-y-5">
+                  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div>
+                      <label for="centreName" class="mb-1.5 block text-sm font-medium text-slate-700">Centre Name <span class="text-red-600" aria-hidden="true">*</span></label>
+                      <input id="centreName" name="centre_name" type="text" required maxlength="120" autocomplete="organization" placeholder="e.g. Knowledge Point Classes"
+                        class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 disabled:bg-slate-50" />
+                      <p id="centreNameErr" class="mt-1 hidden text-xs text-red-600"></p>
+                    </div>
+                    <div>
+                      <label for="tagline" class="mb-1.5 block text-sm font-medium text-slate-700">Tagline</label>
+                      <input id="tagline" name="tagline" type="text" maxlength="160" placeholder="e.g. Learn today, lead tomorrow"
+                        class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 disabled:bg-slate-50" />
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div>
+                      <label for="phone" class="mb-1.5 block text-sm font-medium text-slate-700">Contact Phone</label>
+                      <input id="phone" name="phone" type="tel" maxlength="20" autocomplete="tel" placeholder="+91 98765 43210"
+                        class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 disabled:bg-slate-50" />
+                      <p id="phoneErr" class="mt-1 hidden text-xs text-red-600"></p>
+                    </div>
+                    <div>
+                      <label for="email" class="mb-1.5 block text-sm font-medium text-slate-700">Contact Email</label>
+                      <input id="email" name="email" type="email" maxlength="120" autocomplete="email" placeholder="contact@yourcentre.com"
+                        class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 disabled:bg-slate-50" />
+                      <p id="emailErr" class="mt-1 hidden text-xs text-red-600"></p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label for="address" class="mb-1.5 block text-sm font-medium text-slate-700">Physical Address</label>
+                    <textarea id="address" name="address" rows="3" maxlength="300" placeholder="Street, locality, city, state, PIN"
+                      class="block w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 disabled:bg-slate-50"></textarea>
+                  </div>
+
+                  <div class="border-t border-slate-200 pt-5">
+                    <h3 class="text-sm font-semibold">Receipt Settings</h3>
+                    <p class="mt-0.5 text-sm text-slate-500">Prefix applied to every fee receipt number generated by the system.</p>
+                    <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                      <div>
+                        <label for="receiptPrefix" class="mb-1.5 block text-sm font-medium text-slate-700">Receipt Number Prefix</label>
+                        <input id="receiptPrefix" name="receipt_prefix" type="text" maxlength="12" autocapitalize="characters" spellcheck="false" placeholder="KP-REC"
+                          class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm uppercase text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 disabled:bg-slate-50" />
+                        <p id="receiptPrefixErr" class="mt-1 hidden text-xs text-red-600"></p>
+                        <p class="mt-1 text-xs text-slate-500">Letters, numbers and hyphens only. Max 12 characters.</p>
+                      </div>
+                      <div>
+                        <span class="mb-1.5 block text-sm font-medium text-slate-700">Preview</span>
+                        <div class="flex h-[38px] items-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-3">
+                          <span id="receiptPreview" class="font-mono text-sm text-slate-700">KP-REC-0001</span>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500">Sample of the next receipt number.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col-reverse items-stretch justify-between gap-3 rounded-b-lg border-t border-slate-200 bg-slate-50 px-5 py-3.5 sm:flex-row sm:items-center sm:px-6">
+                <p id="profileMeta" class="text-xs text-slate-500">&nbsp;</p>
+                <button id="saveProfileBtn" type="submit"
+                  class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                  <svg class="btn-spinner hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".3" stroke-width="3"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>
+                  <span class="btn-label">Save Centre Profile</span>
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Section 2: Account & Security -->
+          <section class="rounded-lg border border-slate-200 bg-white shadow-sm" aria-labelledby="sec-account">
+            <div class="border-b border-slate-200 px-5 py-4 sm:px-6">
+              <h2 id="sec-account" class="text-sm font-semibold">Account &amp; Security</h2>
+              <p class="mt-0.5 text-sm text-slate-500">Your sign-in identity and password.</p>
+            </div>
+
+            <form id="passwordForm" novalidate>
+              <div class="space-y-5 px-5 py-5 sm:px-6">
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div>
+                    <label for="adminName" class="mb-1.5 block text-sm font-medium text-slate-700">Admin Display Name</label>
+                    <input id="adminName" type="text" readonly value="" tabindex="-1"
+                      class="block w-full cursor-not-allowed rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600" />
+                  </div>
+                  <div>
+                    <label for="adminEmail" class="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+                    <input id="adminEmail" type="email" readonly value="" tabindex="-1"
+                      class="block w-full cursor-not-allowed rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600" />
+                  </div>
+                </div>
+
+                <div class="border-t border-slate-200 pt-5">
+                  <h3 class="text-sm font-semibold">Change Password</h3>
+                  <p class="mt-0.5 text-sm text-slate-500">Use at least 6 characters. You'll stay signed in on this device.</p>
+
+                  <!-- hidden username for password managers -->
+                  <input type="text" name="username" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" id="pwUsername" />
+
+                  <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div>
+                      <label for="newPassword" class="mb-1.5 block text-sm font-medium text-slate-700">New Password</label>
+                      <div class="relative">
+                        <input id="newPassword" type="password" autocomplete="new-password" minlength="6" placeholder="••••••••"
+                          class="block w-full rounded-md border border-slate-300 bg-white py-2 pl-3 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+                        <button type="button" data-toggle="newPassword" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-700 focus:outline-none focus-visible:text-slate-900" aria-label="Show password">
+                          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.46 12C3.73 7.94 7.52 5 12 5s8.27 2.94 9.54 7c-1.27 4.06-5.06 7-9.54 7S3.73 16.06 2.46 12z" /><circle cx="12" cy="12" r="3" /></svg>
+                        </button>
+                      </div>
+                      <p id="newPasswordErr" class="mt-1 hidden text-xs text-red-600"></p>
+                    </div>
+                    <div>
+                      <label for="confirmPassword" class="mb-1.5 block text-sm font-medium text-slate-700">Confirm Password</label>
+                      <div class="relative">
+                        <input id="confirmPassword" type="password" autocomplete="new-password" minlength="6" placeholder="••••••••"
+                          class="block w-full rounded-md border border-slate-300 bg-white py-2 pl-3 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+                        <button type="button" data-toggle="confirmPassword" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-700 focus:outline-none focus-visible:text-slate-900" aria-label="Show password">
+                          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.46 12C3.73 7.94 7.52 5 12 5s8.27 2.94 9.54 7c-1.27 4.06-5.06 7-9.54 7S3.73 16.06 2.46 12z" /><circle cx="12" cy="12" r="3" /></svg>
+                        </button>
+                      </div>
+                      <p id="confirmPasswordErr" class="mt-1 hidden text-xs text-red-600"></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end rounded-b-lg border-t border-slate-200 bg-slate-50 px-5 py-3.5 sm:px-6">
+                <button id="updatePasswordBtn" type="submit"
+                  class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+                  <svg class="btn-spinner hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".3" stroke-width="3"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>
+                  <span class="btn-label">Update Password</span>
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Section 3: System Status & Diagnostic -->
+          <section class="rounded-lg border border-slate-200 bg-white shadow-sm" aria-labelledby="sec-system">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
+              <div>
+                <h2 id="sec-system" class="text-sm font-semibold">System Status &amp; Diagnostic</h2>
+                <p class="mt-0.5 text-sm text-slate-500">Live connection and session details.</p>
+              </div>
+              <button id="recheckBtn" type="button"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:opacity-60">
+                <svg id="recheckIcon" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0018.4 9M18.4 9L20 9M5.6 15L4 15" /></svg>
+                Re-check
+              </button>
+            </div>
+
+            <dl class="divide-y divide-slate-200">
+              <div class="flex items-center justify-between gap-4 px-5 py-3.5 sm:px-6">
+                <dt class="text-sm text-slate-600">Supabase connection</dt>
+                <dd id="statusConn"><span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600"><span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>Checking…</span></dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-5 py-3.5 sm:px-6">
+                <dt class="text-sm text-slate-600">Active user role</dt>
+                <dd><span id="statusRole" class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-700">—</span></dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-5 py-3.5 sm:px-6">
+                <dt class="text-sm text-slate-600">Session state</dt>
+                <dd id="statusSession"><span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600"><span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>—</span></dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-5 py-3.5 sm:px-6">
+                <dt class="text-sm text-slate-600">Last sign-in</dt>
+                <dd id="statusLastSignIn" class="text-right text-sm text-slate-900">—</dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-5 py-3.5 sm:px-6">
+                <dt class="text-sm text-slate-600">Session expires</dt>
+                <dd id="statusExpires" class="text-right text-sm text-slate-900">—</dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-5 py-3.5 sm:px-6">
+                <dt class="text-sm text-slate-600">User ID</dt>
+                <dd id="statusUserId" class="max-w-[60%] truncate font-mono text-xs text-slate-700" title="">—</dd>
+              </div>
+            </dl>
+          </section>
+
+          <p class="pb-4 text-center text-xs text-slate-400">Coaching Centre Management System</p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase, getUserProfile, logoutUser } from '../js/auth.js';
+
+    /* ---------- Helpers ---------- */
+    const $ = (id) => document.getElementById(id);
+    const ALLOWED_ROLES = ['admin', 'teacher'];
+    const LOGIN_URL = '../index.html';
+
+    const state = {
+      session: null,
+      profile: null,
+      role: null,
+      settingsId: null,
+      original: null
+    };
+
+    function redirectToLogin() {
+      window.location.replace(LOGIN_URL);
+    }
+
+    function setLoading(btn, loading, loadingText) {
+      const spinner = btn.querySelector('.btn-spinner');
+      const label = btn.querySelector('.btn-label');
+      if (!btn.dataset.label) btn.dataset.label = label.textContent;
+      btn.disabled = loading;
+      btn.setAttribute('aria-busy', String(loading));
+      spinner.classList.toggle('hidden', !loading);
+      label.textContent = loading ? loadingText : btn.dataset.label;
+    }
+
+    function initials(name) {
+      const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+      if (!parts.length) return '··';
+      return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+    }
+
+    function fmtDate(d) {
+      if (!d) return '—';
+      const date = d instanceof Date ? d : new Date(d);
+      if (isNaN(date)) return '—';
+      return date.toLocaleString(undefined, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    /* ---------- Toasts ---------- */
+    const TOAST_STYLES = {
+      success: { icon: '<svg class="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>', title: 'Success' },
+      error:   { icon: '<svg class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>', title: 'Error' },
+      info:    { icon: '<svg class="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>', title: 'Notice' }
+    };
+
+    function toast(message, type = 'info', duration = 4500) {
+      const cfg = TOAST_STYLES[type] || TOAST_STYLES.info;
+      const el = document.createElement('div');
+      el.className = 'toast-in pointer-events-auto flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3.5 shadow-lg';
+      el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+      el.innerHTML = `
+        <div class="mt-0.5 shrink-0">${cfg.icon}</div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-slate-900">${cfg.title}</p>
+          <p class="toast-msg mt-0.5 break-words text-sm text-slate-600"></p>
+        </div>
+        <button type="button" class="shrink-0 rounded p-0.5 text-slate-400 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900" aria-label="Dismiss">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>`;
+      el.querySelector('.toast-msg').textContent = message;
+      const dismiss = () => {
+        el.classList.remove('toast-in');
+        el.classList.add('toast-out');
+        setTimeout(() => el.remove(), 200);
+      };
+      el.querySelector('button').addEventListener('click', dismiss);
+      $('toastRegion').appendChild(el);
+      setTimeout(dismiss, duration);
+    }
+
+    /* ---------- Field validation helpers ---------- */
+    function showErr(inputId, msg) {
+      const err = $(inputId + 'Err');
+      const input = $(inputId);
+      if (!err) return;
+      if (msg) {
+        err.textContent = msg;
+        err.classList.remove('hidden');
+        input.classList.add('border-red-500');
+        input.setAttribute('aria-invalid', 'true');
+      } else {
+        err.classList.add('hidden');
+        input.classList.remove('border-red-500');
+        input.removeAttribute('aria-invalid');
+      }
+    }
+
+    /* ---------- Auth ---------- */
+    async function resolveProfile(user) {
+      const unwrap = (res) => (res && typeof res === 'object' && 'data' in res && !('role' in res) ? res.data : res);
+      let profile = null;
+      try { profile = unwrap(await getUserProfile()); } catch (_) { /* try with id */ }
+      if (!profile || !profile.role) {
+        try { profile = unwrap(await getUserProfile(user.id)); } catch (_) { /* ignore */ }
+      }
+      return profile || null;
+    }
+
+    async function verifyAccess() {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data?.session) return false;
+
+      const profile = await resolveProfile(data.session.user);
+      const role = String(profile?.role || '').toLowerCase();
+      if (!profile || !ALLOWED_ROLES.includes(role)) return false;
+
+      state.session = data.session;
+      state.profile = profile;
+      state.role = role;
+      return true;
+    }
+
+    /* ---------- UI population ---------- */
+    function populateUser() {
+      const user = state.session.user;
+      const displayName =
+        state.profile.full_name || state.profile.name || state.profile.display_name ||
+        user.user_metadata?.full_name || user.user_metadata?.name || (user.email || '').split('@')[0] || 'User';
+
+      $('sidebarUserName').textContent = displayName;
+      $('sidebarUserRole').textContent = state.role;
+      $('userAvatar').textContent = initials(displayName);
+
+      $('adminName').value = displayName;
+      $('adminEmail').value = user.email || '';
+      $('pwUsername').value = user.email || '';
+
+      $('statusRole').textContent = state.role;
+      $('statusUserId').textContent = user.id;
+      $('statusUserId').title = user.id;
+      $('statusLastSignIn').textContent = fmtDate(user.last_sign_in_at);
+    }
+
+    function renderSessionStatus() {
+      const s = state.session;
+      const exp = s?.expires_at ? new Date(s.expires_at * 1000) : null;
+      const active = !!s && (!exp || exp > new Date());
+      $('statusSession').innerHTML = active
+        ? '<span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Active</span>'
+        : '<span class="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700"><span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>Expired</span>';
+      $('statusExpires').textContent = exp ? fmtDate(exp) : '—';
+    }
+
+    function setConnStatus(ok, detail) {
+      $('statusConn').innerHTML = ok
+        ? '<span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Connected</span>'
+        : '<span class="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700"><span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>Unreachable</span>';
+      $('statusConn').title = detail || '';
+    }
+
+    async function runDiagnostics() {
+      const btn = $('recheckBtn');
+      btn.disabled = true;
+      $('recheckIcon').classList.add('animate-spin');
+      $('statusConn').innerHTML = '<span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600"><span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>Checking…</span>';
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        if (sess?.session) state.session = sess.session;
+        renderSessionStatus();
+
+        const { error } = await supabase.from('centre_settings').select('id', { head: true, count: 'exact' }).limit(1);
+        setConnStatus(!error, error?.message);
+      } catch (e) {
+        setConnStatus(false, e?.message);
+      } finally {
+        btn.disabled = false;
+        $('recheckIcon').classList.remove('animate-spin');
+      }
+    }
+
+    /* ---------- Centre settings ---------- */
+    const fields = {
+      centre_name: 'centreName',
+      tagline: 'tagline',
+      phone: 'phone',
+      email: 'email',
+      address: 'address',
+      receipt_prefix: 'receiptPrefix'
+    };
+
+    function updateReceiptPreview() {
+      const raw = $('receiptPrefix').value.trim().toUpperCase().replace(/-+$/, '');
+      $('receiptPreview').textContent = (raw || 'REC') + '-0001';
+    }
+
+    function setProfileFormEnabled(enabled) {
+      Object.values(fields).forEach((id) => { $(id).disabled = !enabled; });
+      $('saveProfileBtn').disabled = !enabled;
+    }
+
+    function applySettings(row) {
+      Object.entries(fields).forEach(([col, id]) => { $(id).value = row?.[col] ?? ''; });
+      state.original = readForm();
+      updateReceiptPreview();
+      if (row?.centre_name) $('sidebarCentreName').textContent = row.centre_name;
+    }
+
+    async function loadSettings() {
+      $('profileSkeleton').classList.remove('hidden');
+      $('profileFields').classList.add('hidden');
+      setProfileFormEnabled(false);
+
+      try {
+        const { data, error } = await supabase
+          .from('centre_settings')
+          .select('id, centre_name, tagline, phone, email, address, receipt_prefix')
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          state.settingsId = data.id;
+          applySettings(data);
+          $('profileMeta').textContent = 'Changes apply across receipts and reports.';
+        } else {
+          state.settingsId = null;
+          applySettings(null);
+          $('profileMeta').textContent = 'No profile saved yet. Fill in the details and save to get started.';
+        }
+        setConnStatus(true);
+      } catch (err) {
+        console.error('Failed to load centre settings:', err);
+        toast(err?.message || 'Could not load centre settings.', 'error');
+        $('profileMeta').textContent = 'Unable to load saved settings.';
+        setConnStatus(false, err?.message);
+      } finally {
+        $('profileSkeleton').classList.add('hidden');
+        $('profileFields').classList.remove('hidden');
+        setProfileFormEnabled(true);
+      }
+    }
+
+    function readForm() {
+      return {
+        centre_name: $('centreName').value.trim(),
+        tagline: $('tagline').value.trim(),
+        phone: $('phone').value.trim(),
+        email: $('email').value.trim(),
+        address: $('address').value.trim(),
+        receipt_prefix: $('receiptPrefix').value.trim().toUpperCase()
+      };
+    }
+
+    function validateProfile(v) {
+      let ok = true;
+
+      showErr('centreName', v.centre_name ? '' : 'Centre name is required.');
+      if (!v.centre_name) ok = false;
+
+      const emailBad = v.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email);
+      showErr('email', emailBad ? 'Enter a valid email address.' : '');
+      if (emailBad) ok = false;
+
+      const phoneBad = v.phone && !/^[+()\-.\s\d]{7,20}$/.test(v.phone);
+      showErr('phone', phoneBad ? 'Enter a valid phone number.' : '');
+      if (phoneBad) ok = false;
+
+      const prefixBad = v.receipt_prefix && !/^[A-Z0-9][A-Z0-9-]{0,11}$/.test(v.receipt_prefix);
+      showErr('receiptPrefix', prefixBad ? 'Use letters, numbers and hyphens only (max 12).' : '');
+      if (prefixBad) ok = false;
+
+      return ok;
+    }
+
+    async function saveProfile(e) {
+      e.preventDefault();
+      const btn = $('saveProfileBtn');
+      const values = readForm();
+      if (!validateProfile(values)) {
+        toast('Please fix the highlighted fields.', 'error');
+        const firstBad = document.querySelector('#profileForm [aria-invalid="true"]');
+        firstBad?.focus();
+        return;
+      }
+
+      // Store empty optional fields as NULL
+      const payload = {};
+      Object.entries(values).forEach(([k, val]) => { payload[k] = k === 'centre_name' ? val : (val || null); });
+
+      setLoading(btn, true, 'Saving…');
+      try {
+        let res;
+        if (state.settingsId) {
+          res = await supabase.from('centre_settings').update(payload).eq('id', state.settingsId).select().maybeSingle();
+        } else {
+          res = await supabase.from('centre_settings').insert(payload).select().maybeSingle();
+        }
+        if (res.error) throw res.error;
+
+        // An update that matches no visible row (e.g. blocked by RLS) returns no data
+        if (!res.data) throw new Error('Nothing was saved. You may not have permission to edit centre settings.');
+
+        state.settingsId = res.data.id;
+        applySettings(res.data);
+        $('profileMeta').textContent = 'Saved ' + fmtDate(new Date());
+        toast('Centre profile saved successfully.', 'success');
+      } catch (err) {
+        console.error('Failed to save centre settings:', err);
+        toast(err?.message || 'Failed to save centre profile.', 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    /* ---------- Password ---------- */
+    async function updatePassword(e) {
+      e.preventDefault();
+      const btn = $('updatePasswordBtn');
+      const newPassword = $('newPassword').value;
+      const confirm = $('confirmPassword').value;
+
+      let ok = true;
+      if (newPassword.length < 6) {
+        showErr('newPassword', 'Password must be at least 6 characters.');
+        ok = false;
+      } else showErr('newPassword', '');
+
+      if (confirm !== newPassword) {
+        showErr('confirmPassword', 'Passwords do not match.');
+        ok = false;
+      } else if (!confirm) {
+        showErr('confirmPassword', 'Please confirm your new password.');
+        ok = false;
+      } else showErr('confirmPassword', '');
+
+      if (!ok) {
+        toast('Please correct the password fields.', 'error');
+        return;
+      }
+
+      setLoading(btn, true, 'Updating…');
+      try {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+        $('newPassword').value = '';
+        $('confirmPassword').value = '';
+        toast('Password updated successfully.', 'success');
+      } catch (err) {
+        console.error('Password update failed:', err);
+        toast(err?.message || 'Failed to update password.', 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    /* ---------- Sign out ---------- */
+    async function handleSignOut() {
+      const btn = $('signOutBtn');
+      btn.disabled = true;
+      btn.querySelector('span').textContent = 'Signing out…';
+      try {
+        await logoutUser();
+      } catch (err) {
+        console.error('Sign out failed:', err);
+      }
+      redirectToLogin();
+    }
+
+    /* ---------- Mobile nav ---------- */
+    function setupNav() {
+      const sidebar = $('sidebar');
+      const backdrop = $('backdrop');
+      const open = () => { sidebar.classList.remove('-translate-x-full'); backdrop.classList.remove('hidden'); };
+      const close = () => { sidebar.classList.add('-translate-x-full'); backdrop.classList.add('hidden'); };
+      $('menuBtn').addEventListener('click', open);
+      backdrop.addEventListener('click', close);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    }
+
+    /* ---------- Events ---------- */
+    function bindEvents() {
+      $('profileForm').addEventListener('submit', saveProfile);
+      $('passwordForm').addEventListener('submit', updatePassword);
+      $('signOutBtn').addEventListener('click', handleSignOut);
+      $('recheckBtn').addEventListener('click', runDiagnostics);
+
+      $('receiptPrefix').addEventListener('input', (e) => {
+        const start = e.target.selectionStart;
+        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+        e.target.setSelectionRange(start, start);
+        updateReceiptPreview();
+        showErr('receiptPrefix', '');
+      });
+      $('centreName').addEventListener('input', () => showErr('centreName', ''));
+      $('email').addEventListener('input', () => showErr('email', ''));
+      $('phone').addEventListener('input', () => showErr('phone', ''));
+      $('newPassword').addEventListener('input', () => showErr('newPassword', ''));
+      $('confirmPassword').addEventListener('input', () => showErr('confirmPassword', ''));
+
+      document.querySelectorAll('[data-toggle]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const input = $(btn.dataset.toggle);
+          const show = input.type === 'password';
+          input.type = show ? 'text' : 'password';
+          btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        });
+      });
+
+      // Keep session info fresh if the token refreshes or the user signs out in another tab
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT' || !session) { redirectToLogin(); return; }
+        state.session = session;
+        renderSessionStatus();
+      });
+    }
+
+    /* ---------- Init ---------- */
+    (async function init() {
+      setupNav();
+      try {
+        const authorised = await verifyAccess();
+        if (!authorised) { redirectToLogin(); return; }
+      } catch (err) {
+        console.error('Auth verification failed:', err);
+        redirectToLogin();
+        return;
+      }
+
+      populateUser();
+      renderSessionStatus();
+      bindEvents();
+      $('boot').remove();
+
+      await loadSettings();
+      runDiagnostics();
+    })();
+  </script>
+</body>
+</html>

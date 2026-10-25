@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Examinations &amp; Marks · Coaching Centre Management System</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { -webkit-font-smoothing: antialiased; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
+    @keyframes toast-out { to { opacity: 0; transform: translateY(-8px) scale(.98); } }
+    @keyframes modal-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+    .toast-in { animation: toast-in .18s ease-out both; }
+    .toast-out { animation: toast-out .18s ease-in both; }
+    .modal-in { animation: modal-in .16s ease-out both; }
+    .skeleton { background: #e2e8f0; border-radius: 6px; animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: .5; } }
+    .tabular { font-variant-numeric: tabular-nums; }
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+  </style>
+</head>
+
+<body class="h-full bg-slate-50 font-sans text-slate-900">
+
+  <!-- Boot overlay -->
+  <div id="boot" class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-50">
+    <div class="flex items-center gap-3 text-sm text-slate-500">
+      <svg class="h-4 w-4 animate-spin text-slate-900" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".2" stroke-width="3"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>
+      Verifying session…
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div id="toastRegion" class="pointer-events-none fixed right-4 top-4 z-[80] flex w-full max-w-sm flex-col gap-2" aria-live="polite"></div>
+
+  <!-- Mobile nav backdrop -->
+  <div id="backdrop" class="fixed inset-0 z-30 hidden bg-slate-900/40 lg:hidden"></div>
+
+  <div class="flex min-h-full">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0">
+      <div class="flex h-16 items-center gap-2.5 border-b border-slate-200 px-5">
+        <div class="flex h-8 w-8 items-center justify-center rounded-md bg-slate-900 text-white">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14v7m-6-4.5V12l6 3 6-3v4.5" /></svg>
+        </div>
+        <div class="min-w-0">
+          <p id="sidebarCentreName" class="truncate text-sm font-semibold leading-tight">Coaching Centre</p>
+          <p class="text-xs leading-tight text-slate-500">Management System</p>
+        </div>
+      </div>
+
+      <nav class="flex-1 space-y-0.5 overflow-y-auto px-3 py-4" aria-label="Primary">
+        <p class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Menu</p>
+
+        <a href="admin.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10" /></svg>
+          Dashboard
+        </a>
+        <a href="attendance.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+          Attendance
+        </a>
+        <a href="teachers.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-4.13a4 4 0 100-8 4 4 0 000 8zm6 2a3 3 0 100-6M3 10a3 3 0 106 0" /></svg>
+          Teachers
+        </a>
+        <a href="students.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1" /></svg>
+          Students
+        </a>
+        <a href="batches.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.25v13m0-13C10.83 5.48 9.25 5 7.5 5S4.17 5.48 3 6.25v13C4.17 18.48 5.75 18 7.5 18s3.33.48 4.5 1.25m0-13C13.17 5.48 14.75 5 16.5 5c1.75 0 3.33.48 4.5 1.25v13c-1.17-.77-2.75-1.25-4.5-1.25s-3.33.48-4.5 1.25" /></svg>
+          Batches
+        </a>
+        <a href="fees.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h2m4 0h4M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" /></svg>
+          Fees
+        </a>
+        <a href="exams.html" aria-current="page" class="group flex items-center gap-3 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white">
+          <svg class="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.41-9.41a2 2 0 112.83 2.83L11.83 15H9v-2.83l8.59-8.58z" /></svg>
+          Exams
+        </a>
+        <a href="settings.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.33 4.32c.43-1.76 2.91-1.76 3.34 0a1.72 1.72 0 002.57 1.07c1.54-.94 3.31.83 2.37 2.37a1.72 1.72 0 001.07 2.57c1.76.43 1.76 2.91 0 3.34a1.72 1.72 0 00-1.07 2.57c.94 1.54-.83 3.31-2.37 2.37a1.72 1.72 0 00-2.57 1.07c-.43 1.76-2.91 1.76-3.34 0a1.72 1.72 0 00-2.57-1.07c-1.54.94-3.31-.83-2.37-2.37a1.72 1.72 0 00-1.07-2.57c-1.76-.43-1.76-2.91 0-3.34a1.72 1.72 0 001.07-2.57c-.94-1.54.83-3.31 2.37-2.37.99.6 2.28.08 2.57-1.07z" /><circle cx="12" cy="12" r="3" /></svg>
+          Settings
+        </a>
+      </nav>
+
+      <div class="border-t border-slate-200 p-3">
+        <div class="flex items-center gap-3 rounded-md px-2 py-2">
+          <div id="userAvatar" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">··</div>
+          <div class="min-w-0 flex-1">
+            <p id="sidebarUserName" class="truncate text-sm font-medium leading-tight">Loading…</p>
+            <p id="sidebarUserRole" class="truncate text-xs capitalize leading-tight text-slate-500">&nbsp;</p>
+          </div>
+        </div>
+        <button id="signOutBtn" type="button" class="mt-1 flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:opacity-60">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex min-w-0 flex-1 flex-col lg:pl-64">
+
+      <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div class="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <button id="menuBtn" type="button" class="-ml-1 rounded-md p-2 text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 lg:hidden" aria-label="Open navigation">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+          <div class="min-w-0">
+            <h1 class="truncate text-base font-semibold leading-tight tracking-tight sm:text-lg">Examinations &amp; Marks</h1>
+            <p class="hidden truncate text-xs leading-tight text-slate-500 sm:block">Manage exam schedules, subject papers, marks entry, and result publishing</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-6xl space-y-6">
+
+          <p class="text-xs text-slate-500 sm:hidden">Manage exam schedules, subject papers, marks entry, and result publishing</p>
+
+          <!-- Action bar -->
+          <section class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-label="Actions and filters">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:w-[34rem]">
+                <div>
+                  <label for="filterBatch" class="mb-1 block text-xs font-medium text-slate-600">Batch</label>
+                  <select id="filterBatch" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900">
+                    <option value="">All batches</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="filterStatus" class="mb-1 block text-xs font-medium text-slate-600">Status</label>
+                  <select id="filterStatus" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900">
+                    <option value="">All</option>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                </div>
+              </div>
+              <button id="createBtn" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" /></svg>
+                Create New Exam
+              </button>
+            </div>
+          </section>
+
+          <!-- List header -->
+          <div class="flex items-center justify-between">
+            <p id="listSummary" class="text-sm text-slate-500">&nbsp;</p>
+            <button id="refreshBtn" type="button" class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
+              <svg id="refreshIcon" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0018.4 9M18.4 9L20 9M5.6 15L4 15" /></svg>
+              Refresh
+            </button>
+          </div>
+
+          <!-- Exams grid -->
+          <div id="examGrid" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+
+          <div id="emptyState" class="hidden flex-col items-center rounded-lg border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+            <svg class="h-24 w-24 text-slate-300" viewBox="0 0 96 96" fill="none" aria-hidden="true">
+              <rect x="20" y="12" width="50" height="68" rx="6" stroke="currentColor" stroke-width="2"/>
+              <path d="M31 30h28M31 42h28M31 54h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="68" cy="68" r="15" fill="#f8fafc" stroke="currentColor" stroke-width="2"/>
+              <path d="M68 61v14M61 68h14" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+            <h3 id="emptyTitle" class="mt-4 text-sm font-semibold">No exams yet</h3>
+            <p id="emptyText" class="mt-1 max-w-sm text-sm text-slate-500">Create your first exam to start recording marks and publishing results.</p>
+            <button id="emptyCreateBtn" type="button" class="mt-5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">Create New Exam</button>
+          </div>
+
+          <div id="errorState" class="hidden rounded-lg border border-slate-200 bg-white px-6 py-10 text-center">
+            <p class="text-sm font-medium text-red-700">Couldn't load exams.</p>
+            <p id="errorText" class="mt-1 text-sm text-slate-500"></p>
+            <button id="retryBtn" type="button" class="mt-4 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Try again</button>
+          </div>
+
+          <p class="pb-4 text-center text-xs text-slate-400">Coaching Centre Management System</p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Create Exam modal -->
+  <div id="createModal" class="fixed inset-0 z-50 hidden items-end justify-center bg-slate-900/50 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="createTitle">
+    <div class="modal-in max-h-full w-full max-w-lg overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-xl">
+      <form id="createForm" novalidate>
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div>
+            <h3 id="createTitle" class="text-sm font-semibold">Create New Exam</h3>
+            <p class="mt-0.5 text-sm text-slate-500">New exams start as drafts until you publish results.</p>
+          </div>
+          <button type="button" data-close="createModal" class="rounded p-1 text-slate-400 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900" aria-label="Close">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="space-y-4 px-5 py-5">
+          <div>
+            <label for="cTitle" class="mb-1.5 block text-sm font-medium text-slate-700">Exam Title <span class="text-red-600">*</span></label>
+            <input id="cTitle" type="text" maxlength="120" placeholder="e.g. Unit Test 1 - Physics" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder-slate-400 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+            <p id="cTitleErr" class="mt-1 hidden text-xs text-red-600"></p>
+          </div>
+          <div>
+            <label for="cBatch" class="mb-1.5 block text-sm font-medium text-slate-700">Batch <span class="text-red-600">*</span></label>
+            <select id="cBatch" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"></select>
+            <p id="cBatchErr" class="mt-1 hidden text-xs text-red-600"></p>
+          </div>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label for="cSubject" class="mb-1.5 block text-sm font-medium text-slate-700">Subject Name <span class="text-red-600">*</span></label>
+              <input id="cSubject" type="text" maxlength="80" placeholder="e.g. Physics" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder-slate-400 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+              <p id="cSubjectErr" class="mt-1 hidden text-xs text-red-600"></p>
+            </div>
+            <div>
+              <label for="cChapter" class="mb-1.5 block text-sm font-medium text-slate-700">Chapter Name</label>
+              <input id="cChapter" type="text" maxlength="120" placeholder="e.g. Laws of Motion" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder-slate-400 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label for="cDate" class="mb-1.5 block text-sm font-medium text-slate-700">Exam Date <span class="text-red-600">*</span></label>
+              <input id="cDate" type="date" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+              <p id="cDateErr" class="mt-1 hidden text-xs text-red-600"></p>
+            </div>
+            <div>
+              <label for="cMax" class="mb-1.5 block text-sm font-medium text-slate-700">Max Marks <span class="text-red-600">*</span></label>
+              <input id="cMax" type="number" min="1" step="any" inputmode="decimal" value="100" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+              <p id="cMaxErr" class="mt-1 hidden text-xs text-red-600"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 rounded-b-lg border-t border-slate-200 bg-slate-50 px-5 py-3.5">
+          <button type="button" data-close="createModal" class="rounded-md border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">Cancel</button>
+          <button id="createSaveBtn" type="submit" class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+            <svg class="btn-spinner hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".3" stroke-width="3"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>
+            <span class="btn-label">Create Exam</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Marks entry slide-over -->
+  <div id="marksPanel" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="mpTitle">
+    <div id="marksOverlay" class="absolute inset-0 bg-slate-900/50 opacity-0 transition-opacity duration-200"></div>
+    <aside id="marksAside" class="absolute inset-y-0 right-0 flex w-full max-w-4xl translate-x-full flex-col border-l border-slate-200 bg-white shadow-2xl transition-transform duration-200">
+      <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 id="mpTitle" class="truncate text-base font-semibold tracking-tight">Marks Entry</h2>
+            <span id="mpStatus"></span>
+          </div>
+          <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+            <span id="mpBatch"></span>
+            <span id="mpSubject"></span>
+            <span id="mpDate"></span>
+            <span class="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-700">Max Marks: <span id="mpMax" class="tabular ml-1 font-semibold"></span></span>
+          </div>
+        </div>
+        <button id="mpClose" type="button" class="shrink-0 rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900" aria-label="Close marks entry">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div id="mpPublishedNote" class="hidden border-b border-amber-200 bg-amber-50 px-5 py-2.5 text-xs text-amber-800 sm:px-6">
+        Results for this exam are published. Any changes you save here take effect immediately and are recorded in the audit log.
+      </div>
+
+      <div class="flex flex-col gap-3 border-b border-slate-200 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div class="relative sm:w-72">
+          <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" /></svg>
+          <input id="mpSearch" type="search" placeholder="Search student or admission no." autocomplete="off" class="block w-full rounded-md border border-slate-300 bg-white py-1.5 pl-9 pr-3 text-sm placeholder-slate-400 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+        </div>
+        <p id="mpSummary" class="text-xs text-slate-500">&nbsp;</p>
+      </div>
+
+      <div class="min-h-0 flex-1 overflow-auto">
+        <table class="min-w-full text-sm">
+          <thead class="sticky top-0 z-10 bg-slate-50">
+            <tr class="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <th scope="col" class="w-12 px-4 py-3 sm:pl-6">#</th>
+              <th scope="col" class="px-4 py-3">Student Name</th>
+              <th scope="col" class="px-4 py-3">Adm. No</th>
+              <th scope="col" class="px-4 py-3">Marks Obtained</th>
+              <th scope="col" class="px-4 py-3">%</th>
+              <th scope="col" class="px-4 py-3 sm:pr-6">Remarks</th>
+            </tr>
+          </thead>
+          <tbody id="mpBody" class="divide-y divide-slate-200"></tbody>
+        </table>
+        <div id="mpEmpty" class="hidden flex-col items-center px-6 py-14 text-center">
+          <svg class="h-16 w-16 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1" /></svg>
+          <p class="mt-3 text-sm font-semibold">No active students in this batch</p>
+          <p class="mt-1 max-w-xs text-sm text-slate-500">Add or activate students for this batch to record marks.</p>
+        </div>
+        <div id="mpError" class="hidden px-6 py-12 text-center">
+          <p class="text-sm font-medium text-red-700">Couldn't load students or marks.</p>
+          <p id="mpErrorText" class="mt-1 text-sm text-slate-500"></p>
+        </div>
+      </div>
+
+      <div class="flex flex-col-reverse items-stretch justify-between gap-3 border-t border-slate-200 bg-slate-50 px-5 py-3.5 sm:flex-row sm:items-center sm:px-6">
+        <p id="mpDirty" class="text-xs text-slate-500">&nbsp;</p>
+        <div class="flex items-center gap-2">
+          <button id="mpCancel" type="button" class="flex-1 rounded-md border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 sm:flex-none">Close</button>
+          <button id="mpSave" type="button" disabled class="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none">
+            <svg class="btn-spinner hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".3" stroke-width="3"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>
+            <span class="btn-label">Save Marks Draft</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Confirm modal -->
+  <div id="confirmModal" class="fixed inset-0 z-[70] hidden items-end justify-center bg-slate-900/50 p-4 sm:items-center" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-in w-full max-w-sm rounded-lg border border-slate-200 bg-white shadow-xl">
+      <div class="px-5 py-5">
+        <h3 id="confirmTitle" class="text-sm font-semibold"></h3>
+        <p id="confirmBody" class="mt-1.5 text-sm text-slate-500"></p>
+      </div>
+      <div class="flex items-center justify-end gap-2 rounded-b-lg border-t border-slate-200 bg-slate-50 px-5 py-3.5">
+        <button id="confirmCancel" type="button" class="rounded-md border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">Cancel</button>
+        <button id="confirmOk" type="button" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"></button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase, getUserProfile, logoutUser } from '../js/auth.js';
+
+    /* ================= Config ================= */
+    const ALLOWED_ROLES = ['admin', 'teacher'];
+    const LOGIN_URL = '../index.html';
+
+    const $ = (id) => document.getElementById(id);
+    const state = {
+      session: null, profile: null, role: null, userId: null,
+      batches: [], exams: [],
+      busy: new Set(),
+      loadSeq: 0,
+      // marks panel
+      exam: null, rows: [], marksDirty: false, panelOpen: false, panelSeq: 0,
+      confirmResolve: null
+    };
+
+    /* ================= Utilities ================= */
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const pad = (n) => String(n).padStart(2, '0');
+    const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+    const redirectToLogin = () => window.location.replace(LOGIN_URL);
+    const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+    const statusKey = (s) => String(s || '').toLowerCase();
+    const fmtNum = (n) => (Number.isInteger(Number(n)) ? String(Number(n)) : String(Math.round(Number(n) * 100) / 100));
+
+    function initials(name) {
+      const p = String(name || '').trim().split(/\s+/).filter(Boolean);
+      if (!p.length) return '··';
+      return (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+    }
+    function fmtDate(s) {
+      if (!s) return '—';
+      const [y, m, d] = String(s).slice(0, 10).split('-').map(Number);
+      const dt = new Date(y, (m || 1) - 1, d || 1);
+      return isNaN(dt) ? '—' : dt.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+    function setLoading(btn, loading, text) {
+      const sp = btn.querySelector('.btn-spinner'), lb = btn.querySelector('.btn-label');
+      if (!btn.dataset.label) btn.dataset.label = lb.textContent;
+      btn.disabled = loading;
+      btn.setAttribute('aria-busy', String(loading));
+      sp.classList.toggle('hidden', !loading);
+      lb.textContent = loading ? text : btn.dataset.label;
+    }
+    function showErr(id, msg) {
+      const err = $(id + 'Err'), input = $(id);
+      if (!err) return;
+      err.textContent = msg || '';
+      err.classList.toggle('hidden', !msg);
+      input.classList.toggle('border-red-500', !!msg);
+      if (msg) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid');
+    }
+
+    /* ================= Toasts ================= */
+    const TOAST = {
+      success: { title: 'Success', icon: '<svg class="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' },
+      error:   { title: 'Error',   icon: '<svg class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>' },
+      warning: { title: 'Heads up', icon: '<svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>' },
+      info:    { title: 'Notice',  icon: '<svg class="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' }
+    };
+    function toast(message, type = 'info', duration = 4500) {
+      const cfg = TOAST[type] || TOAST.info;
+      const el = document.createElement('div');
+      el.className = 'toast-in pointer-events-auto flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3.5 shadow-lg';
+      el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+      el.innerHTML = `<div class="mt-0.5 shrink-0">${cfg.icon}</div>
+        <div class="min-w-0 flex-1"><p class="text-sm font-medium text-slate-900">${cfg.title}</p><p class="toast-msg mt-0.5 break-words text-sm text-slate-600"></p></div>
+        <button type="button" class="shrink-0 rounded p-0.5 text-slate-400 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900" aria-label="Dismiss"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>`;
+      el.querySelector('.toast-msg').textContent = message;
+      const dismiss = () => { el.classList.remove('toast-in'); el.classList.add('toast-out'); setTimeout(() => el.remove(), 200); };
+      el.querySelector('button').addEventListener('click', dismiss);
+      $('toastRegion').appendChild(el);
+      setTimeout(dismiss, duration);
+    }
+
+    /* ================= Modals ================= */
+    function openModal(id) {
+      const m = $(id);
+      m.classList.remove('hidden'); m.classList.add('flex');
+      document.body.classList.add('overflow-hidden');
+    }
+    function closeModal(id) {
+      const m = $(id);
+      m.classList.add('hidden'); m.classList.remove('flex');
+      if (!document.querySelector('#createModal.flex, #confirmModal.flex') && !state.panelOpen) document.body.classList.remove('overflow-hidden');
+    }
+
+    function confirmDialog({ title, body, okLabel = 'Confirm', danger = false }) {
+      return new Promise((resolve) => {
+        $('confirmTitle').textContent = title;
+        $('confirmBody').textContent = body;
+        const ok = $('confirmOk');
+        ok.textContent = okLabel;
+        ok.className = 'rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
+          (danger ? 'bg-red-600 hover:bg-red-700 focus-visible:ring-red-600' : 'bg-slate-900 hover:bg-slate-800 focus-visible:ring-slate-900');
+        state.confirmResolve = resolve;
+        openModal('confirmModal');
+        $('confirmCancel').focus();
+      });
+    }
+    function settleConfirm(result) {
+      closeModal('confirmModal');
+      const r = state.confirmResolve; state.confirmResolve = null;
+      if (r) r(result);
+    }
+
+    /* ================= Auth ================= */
+    async function resolveProfile(user) {
+      const unwrap = (r) => (r && typeof r === 'object' && 'data' in r && !('role' in r) ? r.data : r);
+      let p = null;
+      try { p = unwrap(await getUserProfile()); } catch (_) {}
+      if (!p || !p.role) { try { p = unwrap(await getUserProfile(user.id)); } catch (_) {} }
+      return p || null;
+    }
+    async function verifyAccess() {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data?.session) return false;
+      const profile = await resolveProfile(data.session.user);
+      const role = String(profile?.role || '').toLowerCase();
+      if (!profile || !ALLOWED_ROLES.includes(role)) return false;
+      Object.assign(state, { session: data.session, profile, role, userId: data.session.user.id });
+      return true;
+    }
+    function populateUser() {
+      const u = state.session.user;
+      const name = state.profile.full_name || state.profile.name || state.profile.display_name ||
+        u.user_metadata?.full_name || u.user_metadata?.name || (u.email || '').split('@')[0] || 'User';
+      $('sidebarUserName').textContent = name;
+      $('sidebarUserRole').textContent = state.role;
+      $('userAvatar').textContent = initials(name);
+    }
+    async function loadCentreName() {
+      try {
+        const { data } = await supabase.from('centre_settings').select('centre_name').limit(1).maybeSingle();
+        if (data?.centre_name) $('sidebarCentreName').textContent = data.centre_name;
+      } catch (_) { /* cosmetic */ }
+    }
+    async function handleSignOut() {
+      const btn = $('signOutBtn');
+      btn.disabled = true;
+      btn.querySelector('span').textContent = 'Signing out…';
+      try { await logoutUser(); } catch (e) { console.error(e); }
+      redirectToLogin();
+    }
+
+    /* ================= Audit ================= */
+    async function writeAudit(action, oldValue, newValue) {
+      const { error } = await supabase.from('audit_logs').insert({
+        action, old_value: oldValue, new_value: newValue, user_id: state.userId
+      });
+      if (error) throw error;
+    }
+
+    /* ================= Batches ================= */
+    const batchName = (id) => state.batches.find((b) => String(b.id) === String(id))?.name || '';
+
+    async function loadBatches() {
+      const { data, error } = await supabase.from('batches').select('id, name').order('name', { ascending: true });
+      if (error) throw error;
+      state.batches = data || [];
+      $('filterBatch').innerHTML = '<option value="">All batches</option>' +
+        state.batches.map((b) => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+    }
+
+    /* ================= Exams list ================= */
+    function statusBadge(s) {
+      return statusKey(s) === 'published'
+        ? '<span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Published</span>'
+        : '<span class="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Draft</span>';
+    }
+
+    function examSubject(e) {
+      const subs = Array.isArray(e.exam_subjects) ? e.exam_subjects : (e.exam_subjects ? [e.exam_subjects] : []);
+      const subject = subs.map((s) => s.subject_name).filter(Boolean).join(', ');
+      const chapter = subs.map((s) => s.chapter_name).filter(Boolean).join(', ');
+      return { subject, chapter };
+    }
+
+    async function loadExams({ silent = false } = {}) {
+      const seq = ++state.loadSeq;
+      const batchId = $('filterBatch').value;
+      const status = $('filterStatus').value;
+
+      if (!silent) {
+        $('examGrid').innerHTML = Array.from({ length: 6 }, () =>
+          `<div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"><div class="skeleton h-5 w-2/3"></div><div class="skeleton mt-4 h-4 w-1/2"></div><div class="skeleton mt-2 h-4 w-3/4"></div><div class="skeleton mt-5 h-9 w-full"></div></div>`).join('');
+        $('emptyState').classList.add('hidden'); $('emptyState').classList.remove('flex');
+        $('errorState').classList.add('hidden');
+      }
+      $('refreshIcon').classList.add('animate-spin');
+
+      try {
+        let q = supabase.from('exams')
+          .select('*, batches(id, name), exam_subjects(subject_name, chapter_name)')
+          .order('exam_date', { ascending: false })
+          .limit(500);
+        if (batchId) q = q.eq('batch_id', batchId);
+        if (status) q = q.ilike('status', status);
+        const { data, error } = await q;
+        if (error) throw error;
+        if (seq !== state.loadSeq) return;
+        state.exams = data || [];
+        renderExams();
+      } catch (err) {
+        if (seq !== state.loadSeq) return;
+        console.error('Failed to load exams:', err);
+        state.exams = [];
+        $('examGrid').innerHTML = '';
+        $('listSummary').textContent = '';
+        $('errorText').textContent = err?.message || 'Unknown error.';
+        $('errorState').classList.remove('hidden');
+        toast(err?.message || 'Failed to load exams.', 'error');
+      } finally {
+        if (seq === state.loadSeq) $('refreshIcon').classList.remove('animate-spin');
+      }
+    }
+
+    function renderExams() {
+      const list = state.exams;
+      const filtered = !!($('filterBatch').value || $('filterStatus').value);
+      $('errorState').classList.add('hidden');
+      const pub = list.filter((e) => statusKey(e.status) === 'published').length;
+      $('listSummary').textContent = list.length
+        ? `${list.length} exam${list.length === 1 ? '' : 's'} · ${pub} published · ${list.length - pub} draft`
+        : '';
+
+      if (!list.length) {
+        $('examGrid').innerHTML = '';
+        $('emptyTitle').textContent = filtered ? 'No exams match these filters' : 'No exams yet';
+        $('emptyText').textContent = filtered
+          ? 'Try a different batch or status, or create a new exam.'
+          : 'Create your first exam to start recording marks and publishing results.';
+        $('emptyState').classList.remove('hidden'); $('emptyState').classList.add('flex');
+        return;
+      }
+      $('emptyState').classList.add('hidden'); $('emptyState').classList.remove('flex');
+
+      $('examGrid').innerHTML = list.map((e) => {
+        const published = statusKey(e.status) === 'published';
+        const { subject, chapter } = examSubject(e);
+        const bName = e.batches?.name || batchName(e.batch_id) || '—';
+        const busy = state.busy.has(String(e.id));
+        return `<article class="flex flex-col rounded-lg border border-slate-200 bg-white shadow-sm" data-exam="${esc(e.id)}">
+          <div class="flex-1 p-5">
+            <div class="flex items-start justify-between gap-3">
+              <h3 class="min-w-0 text-sm font-semibold leading-snug text-slate-900">${esc(e.title)}</h3>
+              <span class="shrink-0">${statusBadge(e.status)}</span>
+            </div>
+            <dl class="mt-4 space-y-2 text-sm">
+              <div class="flex items-center justify-between gap-3"><dt class="text-slate-500">Batch</dt><dd class="truncate text-right font-medium text-slate-900">${esc(bName)}</dd></div>
+              <div class="flex items-center justify-between gap-3"><dt class="text-slate-500">Exam date</dt><dd class="text-right text-slate-900">${esc(fmtDate(e.exam_date))}</dd></div>
+              <div class="flex items-start justify-between gap-3"><dt class="shrink-0 text-slate-500">Subject / Chapter</dt><dd class="text-right text-slate-900">${subject ? esc(subject) : '—'}${chapter ? `<span class="block text-xs text-slate-500">${esc(chapter)}</span>` : ''}</dd></div>
+              <div class="flex items-center justify-between gap-3"><dt class="text-slate-500">Total marks</dt><dd class="tabular text-right font-semibold text-slate-900">${esc(fmtNum(e.max_marks))}</dd></div>
+            </dl>
+          </div>
+          <div class="space-y-2 border-t border-slate-200 bg-slate-50 p-3 rounded-b-lg">
+            <button type="button" data-act="marks" data-id="${esc(e.id)}" class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.41-9.41a2 2 0 112.83 2.83L11.83 15H9v-2.83l8.59-8.58z" /></svg>
+              Enter / Edit Marks
+            </button>
+            <div class="flex gap-2">
+              <button type="button" data-act="toggle" data-id="${esc(e.id)}" ${busy ? 'disabled' : ''} class="inline-flex flex-1 items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:opacity-60">${busy ? 'Working…' : (published ? 'Unpublish' : 'Publish Results')}</button>
+              <button type="button" data-act="delete" data-id="${esc(e.id)}" ${busy ? 'disabled' : ''} class="inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:opacity-60" aria-label="Delete exam ${esc(e.title)}">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.87 12.14A2 2 0 0116.14 21H7.86a2 2 0 01-1.99-1.86L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" /></svg>
+                <span class="hidden sm:inline">Delete</span>
+              </button>
+            </div>
+          </div>
+        </article>`;
+      }).join('');
+    }
+
+    /* ================= Create exam ================= */
+    function openCreate() {
+      ['cTitle', 'cBatch', 'cSubject', 'cDate', 'cMax'].forEach((id) => showErr(id, ''));
+      $('cTitle').value = '';
+      $('cSubject').value = '';
+      $('cChapter').value = '';
+      $('cDate').value = todayStr();
+      $('cMax').value = '100';
+      $('cBatch').innerHTML = '<option value="">Select batch…</option>' +
+        state.batches.map((b) => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+      $('cBatch').value = $('filterBatch').value || '';
+      openModal('createModal');
+      $('cTitle').focus();
+    }
+
+    async function createExam(e) {
+      e.preventDefault();
+      const v = {
+        title: $('cTitle').value.trim(),
+        batch_id: $('cBatch').value,
+        subject: $('cSubject').value.trim(),
+        chapter: $('cChapter').value.trim(),
+        date: $('cDate').value,
+        max: Number($('cMax').value)
+      };
+      let ok = true;
+      const check = (id, bad, msg) => { showErr(id, bad ? msg : ''); if (bad) ok = false; };
+      check('cTitle', !v.title, 'Exam title is required.');
+      check('cBatch', !v.batch_id, 'Select a batch.');
+      check('cSubject', !v.subject, 'Subject name is required.');
+      check('cDate', !v.date, 'Exam date is required.');
+      check('cMax', !(v.max > 0) || !isFinite(v.max), 'Enter a number greater than 0.');
+      if (!ok) { toast('Please fix the highlighted fields.', 'error'); document.querySelector('#createForm [aria-invalid="true"]')?.focus(); return; }
+
+      const btn = $('createSaveBtn');
+      setLoading(btn, true, 'Creating…');
+      let createdId = null;
+      try {
+        const payload = { title: v.title, batch_id: v.batch_id, exam_date: v.date, max_marks: v.max, status: 'draft', created_by: state.userId };
+        let res = await supabase.from('exams').insert(payload).select('id').single();
+        if (res.error && /created_by/i.test(res.error.message || '')) {
+          delete payload.created_by;
+          res = await supabase.from('exams').insert(payload).select('id').single();
+        }
+        if (res.error) throw res.error;
+        createdId = res.data.id;
+
+        const sub = await supabase.from('exam_subjects').insert({ exam_id: createdId, subject_name: v.subject, chapter_name: v.chapter || null });
+        if (sub.error) {
+          await supabase.from('exams').delete().eq('id', createdId); // don't leave a half-created exam behind
+          createdId = null;
+          throw sub.error;
+        }
+
+        closeModal('createModal');
+        toast(`"${v.title}" created as a draft.`, 'success');
+        await loadExams({ silent: true });
+      } catch (err) {
+        console.error('Create exam failed:', err);
+        toast(err?.message || 'Failed to create exam.', 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    /* ================= Publish / unpublish ================= */
+    async function togglePublish(examId) {
+      const exam = state.exams.find((x) => String(x.id) === String(examId));
+      if (!exam || state.busy.has(String(examId))) return;
+      const publishing = statusKey(exam.status) !== 'published';
+
+      if (publishing) {
+        // Require at least one saved mark before results go out
+        const { count, error } = await supabase.from('marks').select('id', { count: 'exact', head: true }).eq('exam_id', exam.id);
+        if (error) { toast(error.message || 'Could not check marks for this exam.', 'error'); return; }
+        if (!count) { toast('Enter and save marks before publishing results.', 'error'); return; }
+      }
+
+      const go = await confirmDialog(publishing
+        ? { title: 'Publish results?', body: `Results for "${exam.title}" will be marked as published and become visible wherever results are shown.`, okLabel: 'Publish Results' }
+        : { title: 'Unpublish results?', body: `"${exam.title}" will return to draft and its results will no longer be visible.`, okLabel: 'Unpublish' });
+      if (!go) return;
+
+      const newStatus = publishing ? 'published' : 'draft';
+      state.busy.add(String(exam.id));
+      renderExams();
+      try {
+        const { data, error } = await supabase.from('exams').update({ status: newStatus }).eq('id', exam.id).select('id').maybeSingle();
+        if (error) throw error;
+        if (!data) throw new Error('Nothing was updated. You may not have permission to change this exam.');
+
+        const snap = (s) => ({ exam_id: exam.id, title: exam.title, batch_id: exam.batch_id, status: s });
+        let auditFailed = false;
+        try { await writeAudit(publishing ? 'EXAM_RESULTS_PUBLISHED' : 'EXAM_RESULTS_UNPUBLISHED', snap(statusKey(exam.status) || 'draft'), snap(newStatus)); }
+        catch (ae) { auditFailed = true; console.error('Audit log failed:', ae); }
+
+        exam.status = newStatus;
+        if (state.exam && String(state.exam.id) === String(exam.id)) updatePanelHeader();
+        if (auditFailed) toast(`Results ${publishing ? 'published' : 'unpublished'}, but the audit log entry could not be saved.`, 'warning', 7000);
+        else toast(`Results ${publishing ? 'published' : 'unpublished'} for "${exam.title}".`, 'success');
+        if ($('filterStatus').value) await loadExams({ silent: true });
+      } catch (err) {
+        console.error('Publish toggle failed:', err);
+        toast(err?.message || 'Failed to update exam status.', 'error');
+      } finally {
+        state.busy.delete(String(exam.id));
+        renderExams();
+      }
+    }
+
+    /* ================= Delete ================= */
+    async function deleteExam(examId) {
+      const exam = state.exams.find((x) => String(x.id) === String(examId));
+      if (!exam || state.busy.has(String(examId))) return;
+      const published = statusKey(exam.status) === 'published';
+      const go = await confirmDialog({
+        title: 'Delete this exam?',
+        body: `"${exam.title}" and all marks recorded for it will be permanently deleted.${published ? ' Its results are currently published.' : ''} This can't be undone.`,
+        okLabel: 'Delete Exam', danger: true
+      });
+      if (!go) return;
+
+      state.busy.add(String(exam.id));
+      renderExams();
+      try {
+        // Remove dependent rows first so databases without cascading deletes still succeed
+        const m = await supabase.from('marks').delete().eq('exam_id', exam.id);
+        if (m.error) throw m.error;
+        const s = await supabase.from('exam_subjects').delete().eq('exam_id', exam.id);
+        if (s.error) throw s.error;
+        const { data, error } = await supabase.from('exams').delete().eq('id', exam.id).select('id');
+        if (error) throw error;
+        if (!data || !data.length) throw new Error('Nothing was deleted. You may not have permission to delete this exam.');
+
+        let auditFailed = false;
+        try {
+          await writeAudit('EXAM_DELETED',
+            { exam_id: exam.id, title: exam.title, batch_id: exam.batch_id, exam_date: exam.exam_date, max_marks: exam.max_marks, status: exam.status },
+            null);
+        } catch (ae) { auditFailed = true; console.error('Audit log failed:', ae); }
+
+        state.exams = state.exams.filter((x) => String(x.id) !== String(exam.id));
+        if (auditFailed) toast('Exam deleted, but the audit log entry could not be saved.', 'warning', 7000);
+        else toast(`"${exam.title}" deleted.`, 'success');
+      } catch (err) {
+        console.error('Delete failed:', err);
+        toast(err?.message || 'Failed to delete exam.', 'error');
+      } finally {
+        state.busy.delete(String(exam.id));
+        renderExams();
+      }
+    }
+
+    /* ================= Marks entry panel ================= */
+    function parseMarks(raw) {
+      const t = String(raw ?? '').trim();
+      if (t === '') return { empty: true, value: null, valid: true };
+      const n = Number(t);
+      return { empty: false, value: n, valid: isFinite(n) };
+    }
+
+    function rowState(row) {
+      const max = Number(state.exam.max_marks);
+      const p = parseMarks(row.marks);
+      let error = '';
+      if (!p.empty) {
+        if (!p.valid) error = 'Enter a valid number.';
+        else if (p.value < 0) error = 'Cannot be negative.';
+        else if (p.value > max) error = `Cannot exceed ${fmtNum(max)}.`;
+      } else if (row.remarks.trim() && !row.existingId) {
+        error = 'Enter marks to save remarks.';
+      }
+      const num = !p.empty && !error ? Math.round(p.value * 100) / 100 : null;
+      const origNum = row.origMarks === null ? null : Number(row.origMarks);
+      const changed = (num !== origNum && !(p.empty && origNum === null)) || row.remarks.trim() !== row.origRemarks.trim();
+      return { error, num, empty: p.empty, changed: changed && !(p.empty && origNum === null && !row.remarks.trim()) };
+    }
+
+    function pctText(num, max) {
+      if (num === null) return { text: '—', cls: 'text-slate-400' };
+      const pct = (num / max) * 100;
+      const cls = pct < 40 ? 'text-red-600' : pct < 60 ? 'text-amber-600' : 'text-emerald-600';
+      return { text: pct.toFixed(1) + '%', cls };
+    }
+
+    function updatePanelHeader() {
+      const e = state.exam;
+      $('mpTitle').textContent = e.title;
+      $('mpStatus').innerHTML = statusBadge(e.status);
+      $('mpPublishedNote').classList.toggle('hidden', statusKey(e.status) !== 'published');
+    }
+
+    function updateRowUi(tr) {
+      const row = state.rows[Number(tr.dataset.i)];
+      const st = rowState(row);
+      const input = tr.querySelector('.marks-input');
+      const err = tr.querySelector('.row-err');
+      const pct = pctText(st.num, Number(state.exam.max_marks));
+      const cell = tr.querySelector('.pct');
+      cell.textContent = pct.text;
+      cell.className = `pct tabular whitespace-nowrap px-4 py-2.5 text-sm font-medium ${pct.cls}`;
+      input.classList.toggle('border-red-500', !!st.error);
+      input.classList.toggle('border-slate-300', !st.error);
+      if (st.error) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid');
+      err.textContent = st.error;
+      err.classList.toggle('hidden', !st.error);
+      tr.classList.toggle('bg-slate-50', st.changed && !st.error);
+    }
+
+    function updateSummary() {
+      let entered = 0, invalid = 0, changed = 0, sum = 0;
+      const max = Number(state.exam.max_marks);
+      state.rows.forEach((r) => {
+        const st = rowState(r);
+        if (st.error) invalid++;
+        if (st.num !== null) { entered++; sum += (st.num / max) * 100; }
+        if (st.changed) changed++;
+      });
+      const total = state.rows.length;
+      $('mpSummary').textContent = total
+        ? `${entered} of ${total} entered${entered ? ` · Avg ${(sum / entered).toFixed(1)}%` : ''}${invalid ? ` · ${invalid} invalid` : ''}`
+        : '';
+      state.marksDirty = changed > 0;
+      $('mpDirty').textContent = changed ? `${changed} unsaved change${changed === 1 ? '' : 's'}` : (total ? 'All changes saved' : '');
+      $('mpSave').disabled = !changed || state.saving;
+    }
+
+    function renderRows() {
+      const max = Number(state.exam.max_marks);
+      $('mpBody').innerHTML = state.rows.map((r, i) => `
+        <tr data-i="${i}" data-search="${esc((r.name + ' ' + r.adm).toLowerCase())}">
+          <td class="tabular px-4 py-2.5 text-xs text-slate-400 sm:pl-6">${i + 1}</td>
+          <td class="whitespace-nowrap px-4 py-2.5">
+            <span class="font-medium text-slate-900">${esc(r.name)}</span>${r.inactive ? '<span class="ml-2 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium uppercase text-slate-500">Not active</span>' : ''}
+          </td>
+          <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-slate-600">${esc(r.adm || '—')}</td>
+          <td class="px-4 py-2.5 align-top">
+            <div class="flex items-center gap-2">
+              <input type="number" inputmode="decimal" step="any" min="0" max="${esc(max)}" value="${esc(r.marks)}" placeholder="—" aria-label="Marks for ${esc(r.name)}"
+                class="marks-input tabular block w-24 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+              <span class="text-xs text-slate-400">/ ${esc(fmtNum(max))}</span>
+            </div>
+            <p class="row-err mt-1 hidden text-xs text-red-600"></p>
+          </td>
+          <td class="pct tabular whitespace-nowrap px-4 py-2.5 text-sm font-medium text-slate-400">—</td>
+          <td class="px-4 py-2.5 sm:pr-6">
+            <input type="text" maxlength="120" value="${esc(r.remarks)}" placeholder="Optional" aria-label="Remarks for ${esc(r.name)}"
+              class="remarks-input block w-full min-w-[9rem] rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+          </td>
+        </tr>`).join('');
+      $('mpBody').querySelectorAll('tr').forEach(updateRowUi);
+      applyPanelSearch();
+      updateSummary();
+    }
+
+    function applyPanelSearch() {
+      const term = $('mpSearch').value.trim().toLowerCase();
+      $('mpBody').querySelectorAll('tr').forEach((tr) => {
+        tr.classList.toggle('hidden', !!term && !tr.dataset.search.includes(term));
+      });
+    }
+
+    async function fetchBatchStudents(batchId) {
+      let res = await supabase.from('students').select('id, full_name, admission_no').eq('batch_id', batchId).ilike('status', 'active').order('full_name', { ascending: true }).limit(2000);
+      if (res.error && /status|column/i.test(res.error.message || '')) {
+        res = await supabase.from('students').select('id, full_name, admission_no').eq('batch_id', batchId).order('full_name', { ascending: true }).limit(2000);
+      }
+      if (res.error) throw res.error;
+      return res.data || [];
+    }
+
+    async function loadPanelData() {
+      const seq = ++state.panelSeq;
+      const exam = state.exam;
+      $('mpError').classList.add('hidden');
+      $('mpEmpty').classList.add('hidden'); $('mpEmpty').classList.remove('flex');
+      $('mpBody').innerHTML = Array.from({ length: 6 }, () =>
+        `<tr>${Array.from({ length: 6 }, () => '<td class="px-4 py-3.5"><div class="skeleton h-4 w-full"></div></td>').join('')}</tr>`).join('');
+      $('mpSummary').textContent = 'Loading…';
+      $('mpDirty').textContent = '';
+      $('mpSave').disabled = true;
+
+      try {
+        const [students, marksRes] = await Promise.all([
+          fetchBatchStudents(exam.batch_id),
+          supabase.from('marks').select('id, student_id, marks_obtained, remarks, students(id, full_name, admission_no)').eq('exam_id', exam.id).limit(5000)
+        ]);
+        if (marksRes.error) throw marksRes.error;
+        if (seq !== state.panelSeq) return;
+
+        const marksByStudent = new Map((marksRes.data || []).map((m) => [String(m.student_id), m]));
+        const rows = students.map((s) => {
+          const m = marksByStudent.get(String(s.id));
+          marksByStudent.delete(String(s.id));
+          return {
+            studentId: s.id, name: s.full_name || 'Unnamed', adm: s.admission_no || '',
+            existingId: m?.id ?? null,
+            origMarks: m && m.marks_obtained !== null && m.marks_obtained !== undefined ? Number(m.marks_obtained) : null,
+            origRemarks: m?.remarks || '',
+            marks: m && m.marks_obtained !== null && m.marks_obtained !== undefined ? String(m.marks_obtained) : '',
+            remarks: m?.remarks || '', inactive: false
+          };
+        });
+        // Keep marks that belong to students who are no longer in the active list, so nothing is hidden
+        marksByStudent.forEach((m) => {
+          rows.push({
+            studentId: m.student_id, name: m.students?.full_name || 'Unknown student', adm: m.students?.admission_no || '',
+            existingId: m.id,
+            origMarks: m.marks_obtained !== null && m.marks_obtained !== undefined ? Number(m.marks_obtained) : null,
+            origRemarks: m.remarks || '',
+            marks: m.marks_obtained !== null && m.marks_obtained !== undefined ? String(m.marks_obtained) : '',
+            remarks: m.remarks || '', inactive: true
+          });
+        });
+
+        state.rows = rows;
+        if (!rows.length) {
+          $('mpBody').innerHTML = '';
+          $('mpEmpty').classList.remove('hidden'); $('mpEmpty').classList.add('flex');
+          $('mpSummary').textContent = '';
+          updateSummary();
+          return;
+        }
+        renderRows();
+      } catch (err) {
+        if (seq !== state.panelSeq) return;
+        console.error('Failed to load marks panel:', err);
+        state.rows = [];
+        $('mpBody').innerHTML = '';
+        $('mpErrorText').textContent = err?.message || 'Unknown error.';
+        $('mpError').classList.remove('hidden');
+        $('mpSummary').textContent = '';
+        toast(err?.message || 'Failed to load marks.', 'error');
+      }
+    }
+
+    function openPanel(examId) {
+      const exam = state.exams.find((x) => String(x.id) === String(examId));
+      if (!exam) return;
+      state.exam = exam;
+      state.rows = [];
+      state.marksDirty = false;
+      state.panelOpen = true;
+      const { subject, chapter } = examSubject(exam);
+      $('mpBatch').textContent = exam.batches?.name || batchName(exam.batch_id) || '—';
+      $('mpSubject').textContent = [subject, chapter].filter(Boolean).join(' · ');
+      $('mpDate').textContent = fmtDate(exam.exam_date);
+      $('mpMax').textContent = fmtNum(exam.max_marks);
+      $('mpSearch').value = '';
+      updatePanelHeader();
+
+      const panel = $('marksPanel');
+      panel.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+      requestAnimationFrame(() => {
+        $('marksOverlay').classList.remove('opacity-0');
+        $('marksAside').classList.remove('translate-x-full');
+      });
+      loadPanelData().then(() => $('mpBody').querySelector('.marks-input')?.focus());
+    }
+
+    function hidePanel() {
+      $('marksOverlay').classList.add('opacity-0');
+      $('marksAside').classList.add('translate-x-full');
+      state.panelOpen = false;
+      state.panelSeq++;
+      setTimeout(() => {
+        if (state.panelOpen) return;
+        $('marksPanel').classList.add('hidden');
+        if (!document.querySelector('#createModal.flex, #confirmModal.flex')) document.body.classList.remove('overflow-hidden');
+      }, 200);
+    }
+
+    async function requestClosePanel() {
+      if (state.marksDirty) {
+        const discard = await confirmDialog({
+          title: 'Discard unsaved changes?', body: 'You have marks that haven\'t been saved. Closing now will lose them.', okLabel: 'Discard Changes', danger: true
+        });
+        if (!discard) return;
+      }
+      hidePanel();
+    }
+
+    async function saveMarks() {
+      if (!state.exam || state.saving) return;
+      const exam = state.exam;
+      const max = Number(exam.max_marks);
+
+      const inserts = [], updates = [], deletes = [];
+      const oldEntries = [], newEntries = [];
+      let invalid = 0, firstBad = null;
+
+      state.rows.forEach((r, i) => {
+        const st = rowState(r);
+        if (st.error) {
+          invalid++;
+          if (firstBad === null) firstBad = i;
+          return;
+        }
+        if (!st.changed) return;
+        const remarks = r.remarks.trim() || null;
+        const before = { student_id: r.studentId, marks_obtained: r.origMarks, remarks: r.origRemarks.trim() || null };
+
+        if (st.num === null) {
+          if (r.existingId) { deletes.push(r.existingId); oldEntries.push(before); newEntries.push({ student_id: r.studentId, marks_obtained: null, remarks: null }); }
+        } else if (r.existingId) {
+          updates.push({ id: r.existingId, exam_id: exam.id, student_id: r.studentId, marks_obtained: st.num, remarks });
+          oldEntries.push(before); newEntries.push({ student_id: r.studentId, marks_obtained: st.num, remarks });
+        } else {
+          inserts.push({ exam_id: exam.id, student_id: r.studentId, marks_obtained: st.num, remarks });
+          oldEntries.push({ student_id: r.studentId, marks_obtained: null, remarks: null }); newEntries.push({ student_id: r.studentId, marks_obtained: st.num, remarks });
+        }
+      });
+
+      if (invalid) {
+        toast(`Fix ${invalid} invalid entr${invalid === 1 ? 'y' : 'ies'} before saving. Marks must be between 0 and ${fmtNum(max)}.`, 'error');
+        $('mpBody').querySelectorAll('tr')[firstBad]?.querySelector('.marks-input')?.focus();
+        return;
+      }
+      if (!inserts.length && !updates.length && !deletes.length) { toast('No changes to save.', 'info'); return; }
+
+      const btn = $('mpSave');
+      state.saving = true;
+      setLoading(btn, true, 'Saving…');
+      try {
+        if (inserts.length) {
+          const { error } = await supabase.from('marks').insert(inserts);
+          if (error) throw error;
+        }
+        if (updates.length) {
+          const { error } = await supabase.from('marks').upsert(updates, { onConflict: 'id' });
+          if (error) throw error;
+        }
+        if (deletes.length) {
+          const { error } = await supabase.from('marks').delete().in('id', deletes);
+          if (error) throw error;
+        }
+
+        let auditFailed = false;
+        try {
+          const ctx = { exam_id: exam.id, exam_title: exam.title, exam_status: statusKey(exam.status) || 'draft', max_marks: max };
+          await writeAudit('MARKS_MODIFIED', { ...ctx, entries: oldEntries }, { ...ctx, entries: newEntries });
+        } catch (ae) { auditFailed = true; console.error('Audit log failed:', ae); }
+
+        const n = inserts.length + updates.length + deletes.length;
+        if (auditFailed) toast(`Marks saved for ${n} student${n === 1 ? '' : 's'}, but the audit log entry could not be saved.`, 'warning', 7000);
+        else toast(`Marks saved for ${n} student${n === 1 ? '' : 's'}.`, 'success');
+        await loadPanelData();   // refresh ids and baselines from the database
+      } catch (err) {
+        console.error('Save marks failed:', err);
+        toast(err?.message || 'Failed to save marks. Some changes may not have been saved — reload to check.', 'error', 7000);
+      } finally {
+        state.saving = false;
+        setLoading(btn, false);
+        updateSummary();
+      }
+    }
+
+    /* ================= Nav ================= */
+    function setupNav() {
+      const sb = $('sidebar'), bd = $('backdrop');
+      $('menuBtn').addEventListener('click', () => { sb.classList.remove('-translate-x-full'); bd.classList.remove('hidden'); });
+      bd.addEventListener('click', () => { sb.classList.add('-translate-x-full'); bd.classList.add('hidden'); });
+    }
+
+    /* ================= Events ================= */
+    function bindEvents() {
+      $('signOutBtn').addEventListener('click', handleSignOut);
+
+      $('filterBatch').addEventListener('change', () => loadExams());
+      $('filterStatus').addEventListener('change', () => loadExams());
+      $('refreshBtn').addEventListener('click', () => loadExams());
+      $('retryBtn').addEventListener('click', () => loadExams());
+      $('createBtn').addEventListener('click', openCreate);
+      $('emptyCreateBtn').addEventListener('click', openCreate);
+
+      $('examGrid').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-act]');
+        if (!b) return;
+        const id = b.dataset.id;
+        if (b.dataset.act === 'marks') openPanel(id);
+        else if (b.dataset.act === 'toggle') togglePublish(id);
+        else if (b.dataset.act === 'delete') deleteExam(id);
+      });
+
+      // Create modal
+      $('createForm').addEventListener('submit', createExam);
+      document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => closeModal(b.dataset.close)));
+      $('createModal').addEventListener('mousedown', (e) => { if (e.target === $('createModal')) closeModal('createModal'); });
+      ['cTitle', 'cBatch', 'cSubject', 'cDate', 'cMax'].forEach((id) => {
+        $(id).addEventListener('input', () => showErr(id, ''));
+        $(id).addEventListener('change', () => showErr(id, ''));
+      });
+
+      // Confirm
+      $('confirmOk').addEventListener('click', () => settleConfirm(true));
+      $('confirmCancel').addEventListener('click', () => settleConfirm(false));
+      $('confirmModal').addEventListener('mousedown', (e) => { if (e.target === $('confirmModal')) settleConfirm(false); });
+
+      // Marks panel
+      $('mpClose').addEventListener('click', requestClosePanel);
+      $('mpCancel').addEventListener('click', requestClosePanel);
+      $('marksOverlay').addEventListener('mousedown', requestClosePanel);
+      $('mpSave').addEventListener('click', saveMarks);
+      $('mpSearch').addEventListener('input', debounce(applyPanelSearch, 120));
+
+      const body = $('mpBody');
+      body.addEventListener('input', (e) => {
+        const tr = e.target.closest('tr[data-i]');
+        if (!tr) return;
+        const row = state.rows[Number(tr.dataset.i)];
+        if (e.target.classList.contains('marks-input')) row.marks = e.target.value;
+        else if (e.target.classList.contains('remarks-input')) row.remarks = e.target.value;
+        else return;
+        updateRowUi(tr);
+        updateSummary();
+      });
+      body.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' || !e.target.classList.contains('marks-input')) return;
+        e.preventDefault();
+        let tr = e.target.closest('tr').nextElementSibling;
+        while (tr && tr.classList.contains('hidden')) tr = tr.nextElementSibling;
+        if (tr) { const next = tr.querySelector('.marks-input'); next.focus(); next.select(); }
+        else $('mpSave').focus();
+      });
+      // Prevent the mouse wheel from silently changing a focused number input
+      body.addEventListener('wheel', (e) => { if (e.target.type === 'number' && document.activeElement === e.target) e.target.blur(); }, { passive: true });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (!$('confirmModal').classList.contains('hidden')) { settleConfirm(false); return; }
+        if (!$('createModal').classList.contains('hidden')) { closeModal('createModal'); return; }
+        if (state.panelOpen) { requestClosePanel(); return; }
+        $('sidebar').classList.add('-translate-x-full'); $('backdrop').classList.add('hidden');
+      });
+
+      window.addEventListener('beforeunload', (e) => {
+        if (state.panelOpen && state.marksDirty) { e.preventDefault(); e.returnValue = ''; }
+      });
+
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT' || !session) redirectToLogin();
+      });
+    }
+
+    /* ================= Init ================= */
+    (async function init() {
+      setupNav();
+      try {
+        if (!(await verifyAccess())) { redirectToLogin(); return; }
+      } catch (err) {
+        console.error('Auth verification failed:', err);
+        redirectToLogin();
+        return;
+      }
+
+      populateUser();
+      bindEvents();
+      $('boot').remove();
+      loadCentreName();
+
+      try {
+        await loadBatches();
+      } catch (err) {
+        console.error('Failed to load batches:', err);
+        toast(err?.message || 'Could not load batches.', 'error');
+      }
+      await loadExams();
+    })();
+  </script>
+</body>
+</html>

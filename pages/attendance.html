@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Attendance · Coaching Centre Management System</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { -webkit-font-smoothing: antialiased; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
+    @keyframes toast-out { to { opacity: 0; transform: translateY(-8px) scale(.98); } }
+    @keyframes modal-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+    .toast-in { animation: toast-in .18s ease-out both; }
+    .toast-out { animation: toast-out .18s ease-in both; }
+    .modal-in { animation: modal-in .16s ease-out both; }
+    .skeleton { background: #e2e8f0; border-radius: 6px; animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: .5; } }
+    .tabular { font-variant-numeric: tabular-nums; }
+    .seg input:checked + span { background: #0f172a; color: #fff; border-color: #0f172a; }
+    .seg input:focus-visible + span { outline: 2px solid #0f172a; outline-offset: 2px; }
+  </style>
+</head>
+
+<body class="h-full bg-slate-50 font-sans text-slate-900">
+
+  <!-- Boot overlay -->
+  <div id="boot" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-50">
+    <div class="flex items-center gap-3 text-sm text-slate-500">
+      <svg class="h-4 w-4 animate-spin text-slate-900" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".2" stroke-width="3"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>
+      Verifying session…
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div id="toastRegion" class="pointer-events-none fixed right-4 top-4 z-[60] flex w-full max-w-sm flex-col gap-2" aria-live="polite"></div>
+
+  <!-- Mobile backdrop -->
+  <div id="backdrop" class="fixed inset-0 z-30 hidden bg-slate-900/40 lg:hidden"></div>
+
+  <div class="flex min-h-full">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0">
+      <div class="flex h-16 items-center gap-2.5 border-b border-slate-200 px-5">
+        <div class="flex h-8 w-8 items-center justify-center rounded-md bg-slate-900 text-white">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14v7m-6-4.5V12l6 3 6-3v4.5" /></svg>
+        </div>
+        <div class="min-w-0">
+          <p id="sidebarCentreName" class="truncate text-sm font-semibold leading-tight">Coaching Centre</p>
+          <p class="text-xs leading-tight text-slate-500">Management System</p>
+        </div>
+      </div>
+
+      <nav class="flex-1 space-y-0.5 overflow-y-auto px-3 py-4" aria-label="Primary">
+        <p class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Menu</p>
+
+        <a href="admin.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10" /></svg>
+          Dashboard
+        </a>
+        <a href="attendance.html" aria-current="page" class="group flex items-center gap-3 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white">
+          <svg class="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+          Attendance
+        </a>
+        <a href="teachers.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-4.13a4 4 0 100-8 4 4 0 000 8zm6 2a3 3 0 100-6M3 10a3 3 0 106 0" /></svg>
+          Teachers
+        </a>
+        <a href="students.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1" /></svg>
+          Students
+        </a>
+        <a href="batches.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.25v13m0-13C10.83 5.48 9.25 5 7.5 5S4.17 5.48 3 6.25v13C4.17 18.48 5.75 18 7.5 18s3.33.48 4.5 1.25m0-13C13.17 5.48 14.75 5 16.5 5c1.75 0 3.33.48 4.5 1.25v13c-1.17-.77-2.75-1.25-4.5-1.25s-3.33.48-4.5 1.25" /></svg>
+          Batches
+        </a>
+        <a href="fees.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h2m4 0h4M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" /></svg>
+          Fees
+        </a>
+        <a href="settings.html" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+          <svg class="h-4 w-4 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.33 4.32c.43-1.76 2.91-1.76 3.34 0a1.72 1.72 0 002.57 1.07c1.54-.94 3.31.83 2.37 2.37a1.72 1.72 0 001.07 2.57c1.76.43 1.76 2.91 0 3.34a1.72 1.72 0 00-1.07 2.57c.94 1.54-.83 3.31-2.37 2.37a1.72 1.72 0 00-2.57 1.07c-.43 1.76-2.91 1.76-3.34 0a1.72 1.72 0 00-2.57-1.07c-1.54.94-3.31-.83-2.37-2.37a1.72 1.72 0 00-1.07-2.57c-1.76-.43-1.76-2.91 0-3.34a1.72 1.72 0 001.07-2.57c-.94-1.54.83-3.31 2.37-2.37.99.6 2.28.08 2.57-1.07z" /><circle cx="12" cy="12" r="3" /></svg>
+          Settings
+        </a>
+      </nav>
+
+      <div class="border-t border-slate-200 p-3">
+        <div class="flex items-center gap-3 rounded-md px-2 py-2">
+          <div id="userAvatar" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">··</div>
+          <div class="min-w-0 flex-1">
+            <p id="sidebarUserName" class="truncate text-sm font-medium leading-tight">Loading…</p>
+            <p id="sidebarUserRole" class="truncate text-xs capitalize leading-tight text-slate-500">&nbsp;</p>
+          </div>
+        </div>
+        <button id="signOutBtn" type="button" class="mt-1 flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:opacity-60">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex min-w-0 flex-1 flex-col lg:pl-64">
+
+      <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div class="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <button id="menuBtn" type="button" class="-ml-1 rounded-md p-2 text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 lg:hidden" aria-label="Open navigation">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+          <div class="min-w-0">
+            <h1 class="truncate text-base font-semibold leading-tight tracking-tight sm:text-lg">Attendance Management</h1>
+            <p class="hidden truncate text-xs leading-tight text-slate-500 sm:block">Daily 12-hour code generation, live registers, and status corrections</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-6xl space-y-6">
+
+          <p class="text-xs text-slate-500 sm:hidden">Daily 12-hour code generation, live registers, and status corrections</p>
+
+          <!-- Daily Code Generator -->
+          <section class="rounded-lg border border-slate-200 bg-white shadow-sm" aria-labelledby="sec-code">
+            <div class="flex flex-col gap-1 border-b border-slate-200 px-5 py-4 sm:px-6">
+              <h2 id="sec-code" class="text-sm font-semibold">Daily Attendance Code</h2>
+              <p class="text-sm text-slate-500">Students enter this code to mark themselves present. Each code is valid for 12 hours, then resets.</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6 px-5 py-5 sm:px-6 lg:grid-cols-5">
+              <!-- Controls -->
+              <div class="space-y-4 lg:col-span-2">
+                <div>
+                  <label for="codeBatch" class="mb-1.5 block text-sm font-medium text-slate-700">Batch</label>
+                  <select id="codeBatch" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 disabled:bg-slate-50">
+                    <option value="">Loading batches…</option>
+                  </select>
+                </div>
+
+                <button id="generateBtn" type="button" disabled
+                  class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                  <svg class="btn-spinner hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".3" stroke-width="3"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>
+                  <span class="btn-label">Generate 12-Hour Attendance Code</span>
+                </button>
+
+                <div id="activeActions" class="hidden grid-cols-2 gap-2">
+                  <button id="copyBtn" type="button" class="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    <span id="copyLabel">Copy Code</span>
+                  </button>
+                  <button id="regenBtn" type="button" class="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0018.4 9M18.4 9L20 9M5.6 15L4 15" /></svg>
+                    Regenerate
+                  </button>
+                </div>
+
+                <p class="flex items-start gap-2 text-xs text-slate-500">
+                  <svg class="mt-0.5 h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  Code resets every 12 hours. Regenerating replaces the current code for the selected batch.
+                </p>
+              </div>
+
+              <!-- Display -->
+              <div class="lg:col-span-3">
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-5">
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-xs font-medium uppercase tracking-wider text-slate-500">Current code</span>
+                    <span id="codeBadge" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-600"><span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>No code</span>
+                  </div>
+
+                  <div id="codeDigits" class="mt-4 flex justify-center gap-2 sm:gap-3" aria-live="polite" aria-label="Attendance code"></div>
+
+                  <div class="mt-5">
+                    <div class="flex items-end justify-between">
+                      <span class="text-xs text-slate-500">Time remaining</span>
+                      <span id="countdown" class="tabular font-mono text-lg font-semibold text-slate-900">--:--:--</span>
+                    </div>
+                    <div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="progressTrack" aria-label="Time remaining in 12-hour window">
+                      <div id="progressBar" class="h-full w-0 rounded-full bg-slate-900 transition-all duration-1000 ease-linear"></div>
+                    </div>
+                    <p id="codeMeta" class="mt-2 text-xs text-slate-500">Select a batch to see its code.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Filters -->
+          <section class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-label="Filters">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12">
+              <div class="lg:col-span-3">
+                <label for="filterDate" class="mb-1 block text-xs font-medium text-slate-600">Date</label>
+                <input id="filterDate" type="date" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+              </div>
+              <div class="lg:col-span-3">
+                <label for="filterBatch" class="mb-1 block text-xs font-medium text-slate-600">Batch</label>
+                <select id="filterBatch" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900">
+                  <option value="">All batches</option>
+                </select>
+              </div>
+              <div class="sm:col-span-2 lg:col-span-4">
+                <label for="searchInput" class="mb-1 block text-xs font-medium text-slate-600">Search</label>
+                <div class="relative">
+                  <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" /></svg>
+                  <input id="searchInput" type="search" placeholder="Student name or admission no." autocomplete="off"
+                    class="block w-full rounded-md border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+                </div>
+              </div>
+              <div class="flex items-end lg:col-span-2">
+                <button id="addManualBtn" type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" /></svg>
+                  Manual Entry
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm"><p class="text-xs text-slate-500">Total records</p><p id="statTotal" class="tabular mt-1 text-xl font-semibold">0</p></div>
+            <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm"><p class="flex items-center gap-1.5 text-xs text-slate-500"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Present</p><p id="statPresent" class="tabular mt-1 text-xl font-semibold">0</p></div>
+            <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm"><p class="flex items-center gap-1.5 text-xs text-slate-500"><span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>Absent</p><p id="statAbsent" class="tabular mt-1 text-xl font-semibold">0</p></div>
+            <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm"><p class="flex items-center gap-1.5 text-xs text-slate-500"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Excused</p><p id="statExcused" class="tabular mt-1 text-xl font-semibold">0</p></div>
+          </div>
+
+          <!-- Register -->
+          <section class="rounded-lg border border-slate-200 bg-white shadow-sm" aria-labelledby="sec-register">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
+              <div>
+                <h2 id="sec-register" class="text-sm font-semibold">Attendance Register</h2>
+                <p id="registerSub" class="mt-0.5 text-sm text-slate-500">&nbsp;</p>
+              </div>
+              <button id="refreshBtn" type="button" class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
+                <svg id="refreshIcon" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0018.4 9M18.4 9L20 9M5.6 15L4 15" /></svg>
+                Refresh
+              </button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-slate-200 text-sm">
+                <thead class="bg-slate-50">
+                  <tr class="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <th scope="col" class="px-5 py-3 sm:px-6">Student Name</th>
+                    <th scope="col" class="px-4 py-3">Roll / Adm. No</th>
+                    <th scope="col" class="px-4 py-3">Batch</th>
+                    <th scope="col" class="px-4 py-3">Status</th>
+                    <th scope="col" class="px-4 py-3">Marking Method</th>
+                    <th scope="col" class="px-4 py-3">Time Marked</th>
+                    <th scope="col" class="px-5 py-3 text-right sm:px-6">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="registerBody" class="divide-y divide-slate-200 bg-white"></tbody>
+              </table>
+            </div>
+
+            <div id="emptyState" class="hidden flex-col items-center px-6 py-14 text-center">
+              <svg class="h-24 w-24 text-slate-300" viewBox="0 0 96 96" fill="none" aria-hidden="true">
+                <rect x="22" y="14" width="52" height="68" rx="6" stroke="currentColor" stroke-width="2"/>
+                <rect x="36" y="8" width="24" height="12" rx="3" fill="#f8fafc" stroke="currentColor" stroke-width="2"/>
+                <path d="M33 38h30M33 50h30M33 62h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="70" cy="70" r="14" fill="#f8fafc" stroke="currentColor" stroke-width="2"/>
+                <path d="M65 70l4 4 7-8" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <h3 id="emptyTitle" class="mt-4 text-sm font-semibold">No attendance records</h3>
+              <p id="emptyText" class="mt-1 max-w-sm text-sm text-slate-500">No attendance has been marked for this date yet. Share the daily code with students or add an entry manually.</p>
+            </div>
+
+            <div id="errorState" class="hidden px-6 py-10 text-center">
+              <p class="text-sm font-medium text-red-700">Couldn't load attendance records.</p>
+              <p id="errorText" class="mt-1 text-sm text-slate-500"></p>
+              <button id="retryBtn" type="button" class="mt-4 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Try again</button>
+            </div>
+          </section>
+
+          <p class="pb-4 text-center text-xs text-slate-400">Coaching Centre Management System</p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Override / Manual modal -->
+  <div id="overrideModal" class="fixed inset-0 z-50 hidden items-end justify-center bg-slate-900/50 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-in w-full max-w-md rounded-lg border border-slate-200 bg-white shadow-xl">
+      <form id="overrideForm" novalidate>
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div>
+            <h3 id="modalTitle" class="text-sm font-semibold">Override Attendance</h3>
+            <p id="modalSub" class="mt-0.5 text-sm text-slate-500"></p>
+          </div>
+          <button type="button" data-close class="rounded p-1 text-slate-400 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900" aria-label="Close">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="space-y-4 px-5 py-5">
+          <div id="newOnlyFields" class="hidden space-y-4">
+            <div>
+              <label for="mStudent" class="mb-1.5 block text-sm font-medium text-slate-700">Student <span class="text-red-600">*</span></label>
+              <select id="mStudent" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"></select>
+            </div>
+            <div>
+              <label for="mBatch" class="mb-1.5 block text-sm font-medium text-slate-700">Batch <span class="text-red-600">*</span></label>
+              <select id="mBatch" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"></select>
+            </div>
+          </div>
+
+          <div id="editOnlyInfo" class="hidden rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm">
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0"><p id="mName" class="truncate font-medium"></p><p id="mMeta" class="truncate text-xs text-slate-500"></p></div>
+              <span id="mCurrent"></span>
+            </div>
+          </div>
+
+          <fieldset>
+            <legend class="mb-1.5 block text-sm font-medium text-slate-700">Status</legend>
+            <div class="grid grid-cols-3 gap-2">
+              <label class="seg cursor-pointer"><input type="radio" name="mStatus" value="present" class="sr-only" /><span class="block rounded-md border border-slate-300 bg-white px-3 py-2 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50">Present</span></label>
+              <label class="seg cursor-pointer"><input type="radio" name="mStatus" value="absent" class="sr-only" /><span class="block rounded-md border border-slate-300 bg-white px-3 py-2 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50">Absent</span></label>
+              <label class="seg cursor-pointer"><input type="radio" name="mStatus" value="excused" class="sr-only" /><span class="block rounded-md border border-slate-300 bg-white px-3 py-2 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50">Excused</span></label>
+            </div>
+          </fieldset>
+
+          <div>
+            <label for="mReason" class="mb-1.5 block text-sm font-medium text-slate-700">Reason <span class="font-normal text-slate-400">(optional, saved to audit log)</span></label>
+            <textarea id="mReason" rows="2" maxlength="250" placeholder="e.g. Marked absent by mistake" class="block w-full resize-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder-slate-400 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"></textarea>
+          </div>
+          <p id="mErr" class="hidden text-xs text-red-600"></p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 rounded-b-lg border-t border-slate-200 bg-slate-50 px-5 py-3.5">
+          <button type="button" data-close class="rounded-md border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">Cancel</button>
+          <button id="mSaveBtn" type="submit" class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+            <svg class="btn-spinner hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".3" stroke-width="3"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>
+            <span class="btn-label">Save Changes</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm modal (regenerate) -->
+  <div id="confirmModal" class="fixed inset-0 z-50 hidden items-end justify-center bg-slate-900/50 p-4 sm:items-center" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-in w-full max-w-sm rounded-lg border border-slate-200 bg-white shadow-xl">
+      <div class="px-5 py-5">
+        <h3 id="confirmTitle" class="text-sm font-semibold">Regenerate attendance code?</h3>
+        <p class="mt-1.5 text-sm text-slate-500">A new 5-digit code will be created for <span id="confirmBatch" class="font-medium text-slate-700"></span> with a fresh 12-hour window. The current code will stop being the active code.</p>
+      </div>
+      <div class="flex items-center justify-end gap-2 rounded-b-lg border-t border-slate-200 bg-slate-50 px-5 py-3.5">
+        <button id="confirmCancel" type="button" class="rounded-md border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">Cancel</button>
+        <button id="confirmOk" type="button" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">Regenerate</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase, getUserProfile, logoutUser } from '../js/auth.js';
+
+    /* ================= Config ================= */
+    const ALLOWED_ROLES = ['admin', 'teacher'];
+    const LOGIN_URL = '../index.html';
+    const CODE_TTL_MS = 12 * 60 * 60 * 1000;
+
+    const $ = (id) => document.getElementById(id);
+    const state = {
+      session: null, profile: null, role: null, userId: null,
+      batches: [], students: null,
+      code: null,            // { id, batch_id, code, expires_at, created_at }
+      records: [],
+      editing: null,         // attendance record being overridden (null => new manual entry)
+      timer: null,
+      loadSeq: 0
+    };
+
+    /* ================= Utilities ================= */
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const pad = (n) => String(n).padStart(2, '0');
+    const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+    const redirectToLogin = () => window.location.replace(LOGIN_URL);
+
+    function initials(name) {
+      const p = String(name || '').trim().split(/\s+/).filter(Boolean);
+      if (!p.length) return '··';
+      return (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+    }
+    function fmtTime(v) {
+      if (!v) return '—';
+      const d = new Date(v);
+      return isNaN(d) ? '—' : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    }
+    function fmtDateTime(v) {
+      const d = new Date(v);
+      return isNaN(d) ? '—' : d.toLocaleString(undefined, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+    function fmtDateLong(s) {
+      const [y, m, d] = s.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+    function setLoading(btn, loading, text) {
+      const sp = btn.querySelector('.btn-spinner'), lb = btn.querySelector('.btn-label');
+      if (!btn.dataset.label) btn.dataset.label = lb.textContent;
+      btn.disabled = loading;
+      btn.setAttribute('aria-busy', String(loading));
+      sp.classList.toggle('hidden', !loading);
+      lb.textContent = loading ? text : btn.dataset.label;
+    }
+
+    /* ================= Toasts ================= */
+    const TOAST = {
+      success: { title: 'Success', icon: '<svg class="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' },
+      error:   { title: 'Error',   icon: '<svg class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>' },
+      warning: { title: 'Heads up', icon: '<svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>' },
+      info:    { title: 'Notice',  icon: '<svg class="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' }
+    };
+    function toast(message, type = 'info', duration = 4500) {
+      const cfg = TOAST[type] || TOAST.info;
+      const el = document.createElement('div');
+      el.className = 'toast-in pointer-events-auto flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3.5 shadow-lg';
+      el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+      el.innerHTML = `<div class="mt-0.5 shrink-0">${cfg.icon}</div>
+        <div class="min-w-0 flex-1"><p class="text-sm font-medium text-slate-900">${cfg.title}</p><p class="toast-msg mt-0.5 break-words text-sm text-slate-600"></p></div>
+        <button type="button" class="shrink-0 rounded p-0.5 text-slate-400 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900" aria-label="Dismiss"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>`;
+      el.querySelector('.toast-msg').textContent = message;
+      const dismiss = () => { el.classList.remove('toast-in'); el.classList.add('toast-out'); setTimeout(() => el.remove(), 200); };
+      el.querySelector('button').addEventListener('click', dismiss);
+      $('toastRegion').appendChild(el);
+      setTimeout(dismiss, duration);
+    }
+
+    /* ================= Auth ================= */
+    async function resolveProfile(user) {
+      const unwrap = (r) => (r && typeof r === 'object' && 'data' in r && !('role' in r) ? r.data : r);
+      let p = null;
+      try { p = unwrap(await getUserProfile()); } catch (_) {}
+      if (!p || !p.role) { try { p = unwrap(await getUserProfile(user.id)); } catch (_) {} }
+      return p || null;
+    }
+
+    async function verifyAccess() {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data?.session) return false;
+      const profile = await resolveProfile(data.session.user);
+      const role = String(profile?.role || '').toLowerCase();
+      if (!profile || !ALLOWED_ROLES.includes(role)) return false;
+      Object.assign(state, { session: data.session, profile, role, userId: data.session.user.id });
+      return true;
+    }
+
+    function populateUser() {
+      const u = state.session.user;
+      const name = state.profile.full_name || state.profile.name || state.profile.display_name ||
+        u.user_metadata?.full_name || u.user_metadata?.name || (u.email || '').split('@')[0] || 'User';
+      $('sidebarUserName').textContent = name;
+      $('sidebarUserRole').textContent = state.role;
+      $('userAvatar').textContent = initials(name);
+    }
+
+    async function loadCentreName() {
+      try {
+        const { data } = await supabase.from('centre_settings').select('centre_name').limit(1).maybeSingle();
+        if (data?.centre_name) $('sidebarCentreName').textContent = data.centre_name;
+      } catch (_) { /* cosmetic only */ }
+    }
+
+    async function handleSignOut() {
+      const btn = $('signOutBtn');
+      btn.disabled = true;
+      btn.querySelector('span').textContent = 'Signing out…';
+      try { await logoutUser(); } catch (e) { console.error(e); }
+      redirectToLogin();
+    }
+
+    /* ================= Batches ================= */
+    async function loadBatches() {
+      const { data, error } = await supabase.from('batches').select('id, name').order('name', { ascending: true });
+      if (error) throw error;
+      state.batches = data || [];
+
+      const opts = state.batches.map((b) => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+      $('codeBatch').innerHTML = state.batches.length ? opts : '<option value="">No batches available</option>';
+      $('codeBatch').disabled = !state.batches.length;
+      $('filterBatch').innerHTML = '<option value="">All batches</option>' + opts;
+      $('generateBtn').disabled = !state.batches.length;
+    }
+
+    const batchName = (id) => state.batches.find((b) => String(b.id) === String(id))?.name || '';
+
+    /* ================= Attendance code ================= */
+    function generateCode() {
+      const buf = new Uint32Array(1);
+      crypto.getRandomValues(buf);
+      return String(10000 + (buf[0] % 90000));
+    }
+
+    function codeExpiry(row) {
+      if (!row) return null;
+      const exp = new Date(row.expires_at).getTime();
+      const created = row.created_at ? new Date(row.created_at).getTime() : null;
+      // A code older than 12h is always expired, even if expires_at was stored incorrectly.
+      const hardStop = created ? created + CODE_TTL_MS : Infinity;
+      return Math.min(isNaN(exp) ? Infinity : exp, hardStop);
+    }
+
+    function renderDigits(code, dim) {
+      const chars = code ? String(code).split('') : ['–', '–', '–', '–', '–'];
+      $('codeDigits').innerHTML = chars.map((c) =>
+        `<span class="tabular flex h-14 w-11 items-center justify-center rounded-md border bg-white font-mono text-3xl font-bold shadow-sm sm:h-16 sm:w-14 sm:text-4xl ${dim ? 'border-slate-200 text-slate-400 line-through decoration-slate-300' : (code ? 'border-slate-300 text-slate-900' : 'border-slate-200 text-slate-300')}">${esc(c)}</span>`
+      ).join('');
+      $('codeDigits').setAttribute('aria-label', code ? 'Attendance code ' + String(code).split('').join(' ') : 'No attendance code');
+    }
+
+    function setBadge(kind) {
+      const map = {
+        active:  ['border-emerald-200 bg-emerald-50 text-emerald-700', 'bg-emerald-500', 'Active (12h Window)'],
+        expired: ['border-red-200 bg-red-50 text-red-700', 'bg-red-500', 'Expired'],
+        none:    ['border-slate-200 bg-white text-slate-600', 'bg-slate-400', 'No code']
+      }[kind];
+      const b = $('codeBadge');
+      b.className = `inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${map[0]}`;
+      b.innerHTML = `<span class="h-1.5 w-1.5 rounded-full ${map[1]}"></span>${map[2]}`;
+    }
+
+    function tick() {
+      const row = state.code;
+      if (!row) return;
+      const expMs = codeExpiry(row);
+      const remaining = expMs - Date.now();
+      if (remaining <= 0) { renderCodeState(); return; }
+      const s = Math.floor(remaining / 1000);
+      $('countdown').textContent = `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+      const pct = Math.max(0, Math.min(100, (remaining / CODE_TTL_MS) * 100));
+      $('progressBar').style.width = pct + '%';
+      $('progressTrack').setAttribute('aria-valuenow', String(Math.round(pct)));
+    }
+
+    function renderCodeState() {
+      clearInterval(state.timer);
+      state.timer = null;
+      const row = state.code;
+      const gen = $('generateBtn');
+      const actions = $('activeActions');
+
+      if (!row) {
+        renderDigits(null);
+        setBadge('none');
+        $('countdown').textContent = '--:--:--';
+        $('progressBar').style.width = '0%';
+        $('codeMeta').textContent = $('codeBatch').value ? 'No code has been generated for this batch yet.' : 'Select a batch to see its code.';
+        gen.classList.remove('hidden');
+        actions.classList.add('hidden'); actions.classList.remove('grid');
+        return;
+      }
+
+      const expMs = codeExpiry(row);
+      const active = expMs > Date.now();
+      renderDigits(row.code, !active);
+      setBadge(active ? 'active' : 'expired');
+      $('codeMeta').textContent = (active ? 'Expires ' : 'Expired ') + fmtDateTime(expMs) +
+        (row.created_at ? ' · Generated ' + fmtDateTime(row.created_at) : '');
+
+      if (active) {
+        gen.classList.add('hidden');
+        actions.classList.remove('hidden'); actions.classList.add('grid');
+        tick();
+        state.timer = setInterval(tick, 1000);
+      } else {
+        $('countdown').textContent = '00:00:00';
+        $('progressBar').style.width = '0%';
+        gen.classList.remove('hidden');
+        actions.classList.add('hidden'); actions.classList.remove('grid');
+      }
+    }
+
+    async function fetchActiveCode() {
+      const batchId = $('codeBatch').value;
+      if (!batchId) { state.code = null; renderCodeState(); return; }
+      try {
+        const { data, error } = await supabase
+          .from('attendance_codes')
+          .select('*')
+          .eq('batch_id', batchId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        if ($('codeBatch').value !== batchId) return; // batch changed mid-request
+        state.code = data || null;
+      } catch (err) {
+        console.error('Failed to fetch attendance code:', err);
+        state.code = null;
+        toast(err?.message || 'Could not load the attendance code.', 'error');
+      }
+      renderCodeState();
+    }
+
+    async function createCode() {
+      const batchId = $('codeBatch').value;
+      if (!batchId) { toast('Select a batch first.', 'error'); return; }
+      const btn = $('generateBtn'), regen = $('regenBtn');
+      setLoading(btn, true, 'Generating…');
+      regen.disabled = true;
+      try {
+        const expiresAt = new Date(Date.now() + CODE_TTL_MS).toISOString();
+        const payload = { batch_id: batchId, code: generateCode(), expires_at: expiresAt, created_by: state.userId };
+        let res = await supabase.from('attendance_codes').insert(payload).select().single();
+        // Retry once without created_by if that column doesn't exist in this schema
+        if (res.error && /created_by/i.test(res.error.message || '')) {
+          delete payload.created_by;
+          res = await supabase.from('attendance_codes').insert(payload).select().single();
+        }
+        if (res.error) throw res.error;
+        state.code = res.data;
+        renderCodeState();
+        toast(`Code ${res.data.code} generated for ${batchName(batchId)}. Valid for 12 hours.`, 'success');
+      } catch (err) {
+        console.error('Code generation failed:', err);
+        toast(err?.message || 'Failed to generate attendance code.', 'error');
+      } finally {
+        setLoading(btn, false);
+        regen.disabled = false;
+      }
+    }
+
+    async function copyCode() {
+      if (!state.code) return;
+      const text = String(state.code.code);
+      try {
+        if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+        else {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+        }
+        $('copyLabel').textContent = 'Copied';
+        setTimeout(() => { $('copyLabel').textContent = 'Copy Code'; }, 1800);
+        toast('Attendance code copied to clipboard.', 'success', 2500);
+      } catch (_) {
+        toast('Could not copy automatically. Select the code and copy it manually.', 'error');
+      }
+    }
+
+    /* ================= Register ================= */
+    const STATUS_STYLE = {
+      present: ['border-emerald-200 bg-emerald-50 text-emerald-700', 'bg-emerald-500', 'Present'],
+      absent:  ['border-red-200 bg-red-50 text-red-700', 'bg-red-500', 'Absent'],
+      excused: ['border-amber-200 bg-amber-50 text-amber-700', 'bg-amber-500', 'Excused']
+    };
+    const statusKey = (s) => String(s || '').toLowerCase();
+    function statusBadge(s) {
+      const cfg = STATUS_STYLE[statusKey(s)];
+      if (!cfg) return `<span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600">${esc(s || '—')}</span>`;
+      return `<span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${cfg[0]}"><span class="h-1.5 w-1.5 rounded-full ${cfg[1]}"></span>${cfg[2]}</span>`;
+    }
+    function methodLabel(m) {
+      const k = String(m || '').toLowerCase();
+      return (k === 'code' || k === 'daily code' || k === 'daily_code') ? 'Daily Code' : 'Manual';
+    }
+
+    async function loadRegister({ silent = false } = {}) {
+      const seq = ++state.loadSeq;
+      const date = $('filterDate').value;
+      const batchId = $('filterBatch').value;
+
+      if (!silent) {
+        $('registerBody').innerHTML = Array.from({ length: 5 }, () =>
+          `<tr>${Array.from({ length: 7 }, () => '<td class="px-4 py-3.5"><div class="skeleton h-4 w-full"></div></td>').join('')}</tr>`).join('');
+        $('emptyState').classList.add('hidden'); $('emptyState').classList.remove('flex');
+        $('errorState').classList.add('hidden');
+      }
+      $('refreshIcon').classList.add('animate-spin');
+
+      try {
+        let q = supabase
+          .from('attendance')
+          .select('*, students(id, full_name, admission_no), batches(id, name)')
+          .eq('date', date)
+          .limit(2000);
+        if (batchId) q = q.eq('batch_id', batchId);
+        const { data, error } = await q;
+        if (error) throw error;
+        if (seq !== state.loadSeq) return; // stale response
+
+        state.records = (data || []).sort((a, b) =>
+          String(a.students?.full_name || '').localeCompare(String(b.students?.full_name || '')));
+        renderRegister();
+      } catch (err) {
+        if (seq !== state.loadSeq) return;
+        console.error('Failed to load attendance:', err);
+        state.records = [];
+        $('registerBody').innerHTML = '';
+        $('errorText').textContent = err?.message || 'Unknown error.';
+        $('errorState').classList.remove('hidden');
+        updateStats([]);
+        toast(err?.message || 'Failed to load attendance records.', 'error');
+      } finally {
+        if (seq === state.loadSeq) $('refreshIcon').classList.remove('animate-spin');
+      }
+    }
+
+    function filteredRecords() {
+      const term = $('searchInput').value.trim().toLowerCase();
+      if (!term) return state.records;
+      return state.records.filter((r) =>
+        String(r.students?.full_name || '').toLowerCase().includes(term) ||
+        String(r.students?.admission_no || '').toLowerCase().includes(term));
+    }
+
+    function updateStats(rows) {
+      const c = { present: 0, absent: 0, excused: 0 };
+      rows.forEach((r) => { const k = statusKey(r.status); if (k in c) c[k]++; });
+      $('statTotal').textContent = rows.length;
+      $('statPresent').textContent = c.present;
+      $('statAbsent').textContent = c.absent;
+      $('statExcused').textContent = c.excused;
+    }
+
+    function renderRegister() {
+      const rows = filteredRecords();
+      const date = $('filterDate').value;
+      updateStats(rows);
+      $('registerSub').textContent = date ? fmtDateLong(date) : '';
+      $('errorState').classList.add('hidden');
+
+      if (!rows.length) {
+        $('registerBody').innerHTML = '';
+        const searching = $('searchInput').value.trim();
+        $('emptyTitle').textContent = searching ? 'No matching students' : 'No attendance records';
+        $('emptyText').textContent = searching
+          ? 'Nothing matches your search for this date and batch. Try a different name or admission number.'
+          : 'No attendance has been marked for this date yet. Share the daily code with students or add an entry manually.';
+        $('emptyState').classList.remove('hidden'); $('emptyState').classList.add('flex');
+        return;
+      }
+      $('emptyState').classList.add('hidden'); $('emptyState').classList.remove('flex');
+
+      $('registerBody').innerHTML = rows.map((r) => {
+        const name = r.students?.full_name || 'Unknown student';
+        const bName = r.batches?.name || batchName(r.batch_id) || '—';
+        const method = methodLabel(r.method);
+        return `<tr class="hover:bg-slate-50/70">
+          <td class="whitespace-nowrap px-5 py-3 sm:px-6">
+            <div class="flex items-center gap-3">
+              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">${esc(initials(name))}</div>
+              <span class="font-medium text-slate-900">${esc(name)}</span>
+            </div>
+          </td>
+          <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-600">${esc(r.students?.admission_no || '—')}</td>
+          <td class="whitespace-nowrap px-4 py-3 text-slate-600">${esc(bName)}</td>
+          <td class="whitespace-nowrap px-4 py-3">${statusBadge(r.status)}</td>
+          <td class="whitespace-nowrap px-4 py-3"><span class="inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${method === 'Daily Code' ? 'border-slate-200 bg-slate-50 text-slate-700' : 'border-slate-300 bg-white text-slate-700'}">${method}</span></td>
+          <td class="tabular whitespace-nowrap px-4 py-3 text-slate-600">${fmtTime(r.marked_at || r.created_at)}</td>
+          <td class="whitespace-nowrap px-5 py-3 text-right sm:px-6">
+            <button type="button" data-override="${esc(r.id)}" class="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-1">Override</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    /* ================= Override / manual modal ================= */
+    function openModal(id) {
+      const m = $(id);
+      m.classList.remove('hidden'); m.classList.add('flex');
+      document.body.classList.add('overflow-hidden');
+    }
+    function closeModal(id) {
+      const m = $(id);
+      m.classList.add('hidden'); m.classList.remove('flex');
+      if (!document.querySelector('#overrideModal.flex, #confirmModal.flex')) document.body.classList.remove('overflow-hidden');
+    }
+
+    function setStatusRadio(value) {
+      document.querySelectorAll('input[name="mStatus"]').forEach((r) => { r.checked = r.value === value; });
+    }
+    const getStatusRadio = () => document.querySelector('input[name="mStatus"]:checked')?.value || '';
+
+    function modalError(msg) {
+      const e = $('mErr');
+      e.textContent = msg || '';
+      e.classList.toggle('hidden', !msg);
+    }
+
+    function openOverride(recordId) {
+      const rec = state.records.find((r) => String(r.id) === String(recordId));
+      if (!rec) return;
+      state.editing = rec;
+      $('modalTitle').textContent = 'Override Attendance';
+      $('modalSub').textContent = fmtDateLong($('filterDate').value);
+      $('newOnlyFields').classList.add('hidden');
+      $('editOnlyInfo').classList.remove('hidden');
+      $('mName').textContent = rec.students?.full_name || 'Unknown student';
+      $('mMeta').textContent = [rec.students?.admission_no, rec.batches?.name || batchName(rec.batch_id)].filter(Boolean).join(' · ');
+      $('mCurrent').innerHTML = statusBadge(rec.status);
+      setStatusRadio(statusKey(rec.status));
+      $('mReason').value = '';
+      modalError('');
+      openModal('overrideModal');
+      document.querySelector('input[name="mStatus"]:checked, input[name="mStatus"]')?.focus();
+    }
+
+    async function ensureStudents() {
+      if (state.students) return state.students;
+      const { data, error } = await supabase.from('students').select('id, full_name, admission_no').order('full_name', { ascending: true }).limit(3000);
+      if (error) throw error;
+      state.students = data || [];
+      return state.students;
+    }
+
+    async function openManual() {
+      state.editing = null;
+      $('modalTitle').textContent = 'Manual Attendance Entry';
+      $('modalSub').textContent = fmtDateLong($('filterDate').value);
+      $('newOnlyFields').classList.remove('hidden');
+      $('editOnlyInfo').classList.add('hidden');
+      setStatusRadio('present');
+      $('mReason').value = '';
+      modalError('');
+
+      $('mBatch').innerHTML = '<option value="">Select batch…</option>' + state.batches.map((b) => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+      $('mBatch').value = $('filterBatch').value || $('codeBatch').value || '';
+      $('mStudent').innerHTML = '<option value="">Loading students…</option>';
+      $('mStudent').disabled = true;
+      openModal('overrideModal');
+
+      try {
+        const list = await ensureStudents();
+        $('mStudent').innerHTML = '<option value="">Select student…</option>' +
+          list.map((s) => `<option value="${esc(s.id)}">${esc(s.full_name)}${s.admission_no ? ' · ' + esc(s.admission_no) : ''}</option>`).join('');
+      } catch (err) {
+        console.error(err);
+        $('mStudent').innerHTML = '<option value="">Unable to load students</option>';
+        modalError(err?.message || 'Could not load students.');
+      } finally {
+        $('mStudent').disabled = false;
+        $('mStudent').focus();
+      }
+    }
+
+    async function writeAudit(oldValue, newValue) {
+      const { error } = await supabase.from('audit_logs').insert({
+        action: 'ATTENDANCE_OVERRIDE',
+        old_value: oldValue,
+        new_value: newValue,
+        user_id: state.userId
+      });
+      if (error) throw error;
+    }
+
+    async function saveOverride(e) {
+      e.preventDefault();
+      modalError('');
+      const status = getStatusRadio();
+      const reason = $('mReason').value.trim();
+      if (!status) { modalError('Choose a status.'); return; }
+
+      const btn = $('mSaveBtn');
+
+      /* ---- Existing record: override ---- */
+      if (state.editing) {
+        const rec = state.editing;
+        if (statusKey(rec.status) === status && methodLabel(rec.method) === 'Manual') {
+          modalError('This record already has that status.');
+          return;
+        }
+        const oldValue = { attendance_id: rec.id, student_id: rec.student_id, date: rec.date, status: rec.status, method: rec.method ?? null };
+        const newValue = { attendance_id: rec.id, student_id: rec.student_id, date: rec.date, status, method: 'manual' };
+        if (reason) newValue.reason = reason;
+
+        setLoading(btn, true, 'Saving…');
+        try {
+          const { data, error } = await supabase.from('attendance').update({ status, method: 'manual' }).eq('id', rec.id).select('id').maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error('Nothing was updated. You may not have permission to edit this record.');
+
+          let auditFailed = false;
+          try { await writeAudit(oldValue, newValue); } catch (ae) { auditFailed = true; console.error('Audit log failed:', ae); }
+
+          closeModal('overrideModal');
+          await loadRegister({ silent: true });
+          const who = rec.students?.full_name || 'student';
+          if (auditFailed) toast(`${who}'s status was updated, but the audit log entry could not be saved.`, 'warning', 7000);
+          else toast(`${who} marked ${status}.`, 'success');
+        } catch (err) {
+          console.error('Override failed:', err);
+          modalError(err?.message || 'Failed to update attendance.');
+          toast(err?.message || 'Failed to update attendance.', 'error');
+        } finally {
+          setLoading(btn, false);
+        }
+        return;
+      }
+
+      /* ---- New manual entry ---- */
+      const studentId = $('mStudent').value;
+      const batchId = $('mBatch').value;
+      const date = $('filterDate').value;
+      if (!studentId) { modalError('Select a student.'); return; }
+      if (!batchId) { modalError('Select a batch.'); return; }
+
+      const existing = state.records.find((r) => String(r.student_id) === String(studentId) && String(r.batch_id) === String(batchId));
+      if (existing) { modalError('A record already exists for this student on this date. Use Override on the register instead.'); return; }
+
+      setLoading(btn, true, 'Saving…');
+      try {
+        const { data, error } = await supabase.from('attendance')
+          .insert({ student_id: studentId, batch_id: batchId, date, status, method: 'manual' })
+          .select('id').single();
+        if (error) throw error;
+
+        const oldValue = null;
+        const newValue = { attendance_id: data.id, student_id: studentId, batch_id: batchId, date, status, method: 'manual' };
+        if (reason) newValue.reason = reason;
+        let auditFailed = false;
+        try { await writeAudit(oldValue, newValue); } catch (ae) { auditFailed = true; console.error('Audit log failed:', ae); }
+
+        closeModal('overrideModal');
+        await loadRegister({ silent: true });
+        if (auditFailed) toast('Entry added, but the audit log entry could not be saved.', 'warning', 7000);
+        else toast(`Manual entry saved as ${status}.`, 'success');
+      } catch (err) {
+        console.error('Manual entry failed:', err);
+        modalError(err?.message || 'Failed to save attendance.');
+        toast(err?.message || 'Failed to save attendance.', 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    /* ================= Confirm (regenerate) ================= */
+    function askRegenerate() {
+      $('confirmBatch').textContent = batchName($('codeBatch').value) || 'this batch';
+      openModal('confirmModal');
+      $('confirmOk').focus();
+    }
+
+    /* ================= Realtime ================= */
+    function subscribeRealtime() {
+      try {
+        const refresh = debounce(() => loadRegister({ silent: true }), 600);
+        supabase.channel('attendance-register')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, refresh)
+          .subscribe();
+      } catch (e) { console.warn('Realtime unavailable:', e); }
+    }
+
+    /* ================= Nav ================= */
+    function setupNav() {
+      const sb = $('sidebar'), bd = $('backdrop');
+      const open = () => { sb.classList.remove('-translate-x-full'); bd.classList.remove('hidden'); };
+      const close = () => { sb.classList.add('-translate-x-full'); bd.classList.add('hidden'); };
+      $('menuBtn').addEventListener('click', open);
+      bd.addEventListener('click', close);
+    }
+
+    /* ================= Events ================= */
+    function bindEvents() {
+      $('signOutBtn').addEventListener('click', handleSignOut);
+
+      $('codeBatch').addEventListener('change', fetchActiveCode);
+      $('generateBtn').addEventListener('click', createCode);
+      $('copyBtn').addEventListener('click', copyCode);
+      $('regenBtn').addEventListener('click', askRegenerate);
+      $('confirmCancel').addEventListener('click', () => closeModal('confirmModal'));
+      $('confirmOk').addEventListener('click', async () => { closeModal('confirmModal'); await createCode(); });
+
+      $('filterDate').addEventListener('change', () => { if ($('filterDate').value) loadRegister(); });
+      $('filterBatch').addEventListener('change', () => loadRegister());
+      $('searchInput').addEventListener('input', debounce(renderRegister, 150));
+      $('refreshBtn').addEventListener('click', () => loadRegister());
+      $('retryBtn').addEventListener('click', () => loadRegister());
+      $('addManualBtn').addEventListener('click', openManual);
+
+      $('registerBody').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-override]');
+        if (b) openOverride(b.dataset.override);
+      });
+
+      $('overrideForm').addEventListener('submit', saveOverride);
+      document.querySelectorAll('#overrideModal [data-close]').forEach((b) => b.addEventListener('click', () => closeModal('overrideModal')));
+      ['overrideModal', 'confirmModal'].forEach((id) => {
+        $(id).addEventListener('mousedown', (e) => { if (e.target === $(id)) closeModal(id); });
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        closeModal('overrideModal'); closeModal('confirmModal');
+        $('sidebar').classList.add('-translate-x-full'); $('backdrop').classList.add('hidden');
+      });
+
+      // Re-evaluate code expiry when the tab becomes visible again (timers throttle in background tabs)
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) renderCodeState(); });
+
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT' || !session) redirectToLogin();
+      });
+    }
+
+    /* ================= Init ================= */
+    (async function init() {
+      setupNav();
+      try {
+        if (!(await verifyAccess())) { redirectToLogin(); return; }
+      } catch (err) {
+        console.error('Auth verification failed:', err);
+        redirectToLogin();
+        return;
+      }
+
+      populateUser();
+      bindEvents();
+      $('filterDate').value = todayStr();
+      renderDigits(null);
+      $('boot').remove();
+      loadCentreName();
+
+      try {
+        await loadBatches();
+      } catch (err) {
+        console.error('Failed to load batches:', err);
+        $('codeBatch').innerHTML = '<option value="">Unable to load batches</option>';
+        toast(err?.message || 'Could not load batches.', 'error');
+      }
+
+      await Promise.all([fetchActiveCode(), loadRegister()]);
+      subscribeRealtime();
+    })();
+  </script>
+</body>
+</html>

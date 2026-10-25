@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Parent Portal · Coaching Centre</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    .tabular { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="h-full bg-slate-50 font-sans text-slate-900">
+
+  <!-- ===================== LOGIN VIEW ===================== -->
+  <div id="loginView" class="min-h-full flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-sm">
+      <div class="mb-6 flex flex-col items-center text-center">
+        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-4.13a4 4 0 100-8 4 4 0 000 8zm6 2a3 3 0 100-6M3 10a3 3 0 106 0" />
+          </svg>
+        </div>
+        <h1 class="mt-4 text-xl font-semibold tracking-tight">Parent Portal</h1>
+        <p class="mt-1 text-sm text-slate-500">Track your ward's progress, attendance, and fees.</p>
+      </div>
+
+      <form id="loginForm" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" novalidate>
+        <div class="space-y-4">
+          <div>
+            <label for="admNo" class="mb-1.5 block text-sm font-medium text-slate-700">Student Admission Number</label>
+            <input id="admNo" type="text" autocomplete="off" autocapitalize="characters" required placeholder="e.g. ADM-001"
+              class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm uppercase text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+          </div>
+
+          <div>
+            <label for="contactNo" class="mb-1.5 block text-sm font-medium text-slate-700">Registered Phone or PIN</label>
+            <input id="contactNo" type="password" required placeholder="Phone number or PIN"
+              class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+          </div>
+
+          <div id="loginError" class="hidden rounded-md border border-red-200 bg-red-50 p-2.5 text-xs text-red-700"></div>
+
+          <button type="submit" id="loginBtn"
+            class="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60">
+            <span>Access Ward Details</span>
+          </button>
+        </div>
+
+        <div class="mt-4 text-center">
+          <a href="../index.html" class="text-xs text-slate-500 hover:text-slate-800 hover:underline">Are you a staff member? Sign in here</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== DASHBOARD VIEW ===================== -->
+  <div id="dashView" class="hidden min-h-full flex-col">
+    <!-- Top Navigation -->
+    <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+      <div class="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white font-bold text-sm">
+            <span id="studentInitial">S</span>
+          </div>
+          <div>
+            <h2 id="studentName" class="text-sm font-semibold leading-tight text-slate-900">Student Name</h2>
+            <p id="studentBatch" class="text-xs text-slate-500">Batch · ADM-000</p>
+          </div>
+        </div>
+
+        <button id="logoutBtn" type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+          Sign Out
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="mx-auto max-w-5xl flex-1 space-y-6 px-4 py-6 sm:px-6">
+
+      <!-- Metrics Overview -->
+      <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <!-- Attendance Rate -->
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Attendance Rate</p>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="metricAttRate" class="tabular text-3xl font-bold tracking-tight text-slate-900">0%</span>
+            <span id="metricAttCount" class="text-xs text-slate-500">0 / 0 classes</span>
+          </div>
+          <div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div id="metricAttBar" class="h-full rounded-full bg-emerald-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Academic Average -->
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Average Exam Score</p>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="metricExamAvg" class="tabular text-3xl font-bold tracking-tight text-slate-900">0%</span>
+            <span id="metricExamCount" class="text-xs text-slate-500">Across 0 exams</span>
+          </div>
+          <div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div id="metricExamBar" class="h-full rounded-full bg-indigo-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Fee Status -->
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Fee Clearance</p>
+          <div class="mt-2 flex items-center justify-between">
+            <span id="metricFeeStatus" class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium border border-slate-200 bg-slate-50">Pending</span>
+            <span id="metricMonthlyFee" class="text-sm font-semibold text-slate-900">₹0 / mo</span>
+          </div>
+          <p class="mt-3 text-xs text-slate-500">Check with front desk for receipt duplicates.</p>
+        </div>
+      </section>
+
+      <!-- Exam Marks & Report -->
+      <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="border-b border-slate-200 px-5 py-4">
+          <h3 class="text-sm font-semibold text-slate-900">Published Exam Results</h3>
+          <p class="mt-0.5 text-xs text-slate-500">Formal examination scores evaluated by subject instructors.</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+              <tr>
+                <th class="px-5 py-3">Examination</th>
+                <th class="px-4 py-3">Date</th>
+                <th class="px-4 py-3">Marks Obtained</th>
+                <th class="px-4 py-3">Percentage</th>
+                <th class="px-5 py-3">Teacher Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="examTableBody" class="divide-y divide-slate-100 bg-white">
+              <tr>
+                <td colspan="5" class="px-5 py-6 text-center text-xs text-slate-500">No published exam records found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Recent Attendance Register -->
+      <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="border-b border-slate-200 px-5 py-4">
+          <h3 class="text-sm font-semibold text-slate-900">Recent Attendance Records</h3>
+          <p class="mt-0.5 text-xs text-slate-500">Classroom sign-ins recorded by 12-hour OTP or manual verification.</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+              <tr>
+                <th class="px-5 py-3">Date</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3">Verification Method</th>
+                <th class="px-5 py-3 text-right">Recorded Time</th>
+              </tr>
+            </thead>
+            <tbody id="attTableBody" class="divide-y divide-slate-100 bg-white">
+              <tr>
+                <td colspan="4" class="px-5 py-6 text-center text-xs text-slate-500">No attendance records found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { supabase } from '../js/auth.js';
+
+    const PARENT_SESSION_KEY = 'cc_parent_student';
+
+    const loginView = document.getElementById('loginView');
+    const dashView = document.getElementById('dashView');
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    let currentStudent = null;
+
+    function showError(msg) {
+      if (!msg) {
+        loginError.classList.add('hidden');
+        loginError.textContent = '';
+      } else {
+        loginError.textContent = msg;
+        loginError.classList.remove('hidden');
+      }
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showError('');
+
+      const admNo = document.getElementById('admNo').value.trim().toUpperCase();
+      const contactNo = document.getElementById('contactNo').value.trim();
+
+      if (!admNo || !contactNo) {
+        showError('Please enter both the Admission Number and registered phone/PIN.');
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Verifying...';
+
+      try {
+        // Query student matching admission_no and (phone or pin)
+        const { data, error } = await supabase
+          .from('students')
+          .select('*, batches(name, monthly_fee)')
+          .eq('admission_no', admNo)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        // Verify either phone ends with entered value or matches PIN
+        const phoneMatch = data?.phone && data.phone.replace(/\D/g, '').endsWith(contactNo.replace(/\D/g, ''));
+        const pinMatch = data?.pin === contactNo;
+
+        if (!data || (!phoneMatch && !pinMatch)) {
+          showError('Invalid Admission Number or contact verification details.');
+          return;
+        }
+
+        currentStudent = data;
+        localStorage.setItem(PARENT_SESSION_KEY, JSON.stringify(data));
+        renderDashboard();
+      } catch (err) {
+        showError(err.message || 'Unable to connect. Please try again.');
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Access Ward Details';
+      }
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem(PARENT_SESSION_KEY);
+      currentStudent = null;
+      dashView.classList.add('hidden');
+      dashView.classList.remove('flex');
+      loginView.classList.remove('hidden');
+      document.getElementById('admNo').value = '';
+      document.getElementById('contactNo').value = '';
+    });
+
+    async function renderDashboard() {
+      if (!currentStudent) return;
+
+      loginView.classList.add('hidden');
+      dashView.classList.remove('hidden');
+      dashView.classList.add('flex');
+
+      // Populate Header
+      document.getElementById('studentName').textContent = currentStudent.full_name;
+      document.getElementById('studentInitial').textContent = currentStudent.full_name.charAt(0).toUpperCase();
+      const batchName = currentStudent.batches?.name || 'Unassigned Batch';
+      document.getElementById('studentBatch').textContent = `${batchName} · ${currentStudent.admission_no}`;
+
+      // Fee Card
+      const feeStatus = String(currentStudent.fee_status || 'Pending');
+      const feeBadge = document.getElementById('metricFeeStatus');
+      feeBadge.textContent = feeStatus;
+      if (feeStatus.toLowerCase() === 'paid') {
+        feeBadge.className = 'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium border border-emerald-200 bg-emerald-50 text-emerald-700';
+      } else if (feeStatus.toLowerCase() === 'partial') {
+        feeBadge.className = 'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium border border-amber-200 bg-amber-50 text-amber-700';
+      } else {
+        feeBadge.className = 'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-200 bg-red-50 text-red-700';
+      }
+      document.getElementById('metricMonthlyFee').textContent = `₹${Number(currentStudent.batches?.monthly_fee || 0).toLocaleString('en-IN')} / mo`;
+
+      // Fetch Attendance & Marks concurrently
+      const [attRes, marksRes] = await Promise.all([
+        supabase.from('attendance').select('*').eq('student_id', currentStudent.id).order('date', { ascending: false }).limit(30),
+        supabase.from('marks').select('*, exams!inner(title, exam_date, max_marks, status)').eq('student_id', currentStudent.id).ilike('exams.status', 'published')
+      ]);
+
+      // Calculate Attendance Metrics
+      const attList = attRes.data || [];
+      const presentCount = attList.filter(a => String(a.status).toLowerCase() === 'present').length;
+      const totalAttCount = attList.filter(a => ['present', 'absent'].includes(String(a.status).toLowerCase())).length;
+      const attRate = totalAttCount > 0 ? Math.round((presentCount / totalAttCount) * 100) : 0;
+
+      document.getElementById('metricAttRate').textContent = `${attRate}%`;
+      document.getElementById('metricAttCount').textContent = `${presentCount} / ${totalAttCount} classes`;
+      document.getElementById('metricAttBar').style.width = `${attRate}%`;
+
+      // Populate Attendance Table
+      const attBody = document.getElementById('attTableBody');
+      if (attList.length > 0) {
+        attBody.innerHTML = attList.map(a => {
+          const st = String(a.status || '').toLowerCase();
+          let pill = '<span class="inline-flex rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">Absent</span>';
+          if (st === 'present') pill = '<span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Present</span>';
+          if (st === 'excused') pill = '<span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Excused</span>';
+
+          const formattedDate = a.date ? new Date(a.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+          const timeMarked = a.marked_at ? new Date(a.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—';
+
+          return `
+            <tr>
+              <td class="whitespace-nowrap px-5 py-3 font-medium text-slate-900">${formattedDate}</td>
+              <td class="whitespace-nowrap px-4 py-3">${pill}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-xs text-slate-500 capitalize">${a.method || 'Manual'}</td>
+              <td class="whitespace-nowrap px-5 py-3 text-right text-xs text-slate-500">${timeMarked}</td>
+            </tr>`;
+        }).join('');
+      }
+
+      // Calculate Marks & Populate Table
+      const marksList = marksRes.data || [];
+      let totalPct = 0;
+      let validExamCount = 0;
+
+      const examBody = document.getElementById('examTableBody');
+      if (marksList.length > 0) {
+        examBody.innerHTML = marksList.map(m => {
+          const max = Number(m.exams?.max_marks || 100);
+          const scored = Number(m.marks_obtained || 0);
+          const pct = Math.round((scored / max) * 100);
+          totalPct += pct;
+          validExamCount++;
+
+          const examDate = m.exams?.exam_date ? new Date(m.exams.exam_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
+          let pillClass = 'border-emerald-200 bg-emerald-50 text-emerald-700';
+          if (pct < 40) pillClass = 'border-red-200 bg-red-50 text-red-700';
+          else if (pct < 60) pillClass = 'border-amber-200 bg-amber-50 text-amber-700';
+
+          return `
+            <tr>
+              <td class="whitespace-nowrap px-5 py-3 font-medium text-slate-900">${m.exams?.title || 'Exam'}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-xs text-slate-500">${examDate}</td>
+              <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-900">${scored} <span class="text-xs font-normal text-slate-400">/ ${max}</span></td>
+              <td class="whitespace-nowrap px-4 py-3">
+                <span class="inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold ${pillClass}">${pct}%</span>
+              </td>
+              <td class="px-5 py-3 text-xs text-slate-500">${m.remarks || '—'}</td>
+            </tr>`;
+        }).join('');
+      }
+
+      const avgScore = validExamCount > 0 ? Math.round(totalPct / validExamCount) : 0;
+      document.getElementById('metricExamAvg').textContent = `${avgScore}%`;
+      document.getElementById('metricExamCount').textContent = `Across ${validExamCount} exam${validExamCount === 1 ? '' : 's'}`;
+      document.getElementById('metricExamBar').style.width = `${avgScore}%`;
+    }
+
+    // Auto-login if session exists
+    (function init() {
+      const saved = localStorage.getItem(PARENT_SESSION_KEY);
+      if (saved) {
+        try {
+          currentStudent = JSON.parse(saved);
+          renderDashboard();
+        } catch (_) {
+          localStorage.removeItem(PARENT_SESSION_KEY);
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
