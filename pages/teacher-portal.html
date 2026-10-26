@@ -4,46 +4,75 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Teacher Portal · Coaching Centre</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { -webkit-font-smoothing: antialiased; }
+    .tabular { font-variant-numeric: tabular-nums; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
+    .toast-in { animation: toast-in .18s ease-out both; }
+  </style>
 </head>
 <body class="min-h-full bg-slate-50 font-sans text-slate-900 antialiased">
+
+  <!-- Floating Toasts -->
+  <div id="toastRegion" class="pointer-events-none fixed right-4 top-4 z-50 flex w-full max-w-sm flex-col gap-2" aria-live="polite"></div>
 
   <!-- ===================== LOGIN VIEW (Username + PIN) ===================== -->
   <div id="loginView" class="flex min-h-screen items-center justify-center px-4 py-12">
     <div class="w-full max-w-sm">
       <div class="mb-6 flex flex-col items-center text-center">
-        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-600 text-white shadow-sm">
+        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
           </svg>
         </div>
         <h1 class="mt-4 text-xl font-semibold tracking-tight text-slate-900">Teacher Portal</h1>
-        <p class="mt-1 text-sm text-slate-500">Sign in with your Username and PIN set by Admin.</p>
+        <p class="mt-1 text-sm text-slate-500">Sign in with your Username and PIN to manage classes.</p>
       </div>
 
       <form id="loginForm" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" novalidate>
         <div class="space-y-4">
           <div>
-            <label for="tUsername" class="mb-1.5 block text-sm font-medium text-slate-700">Teacher Username</label>
-            <input id="tUsername" type="text" autocomplete="off" required placeholder="e.g. TCH-001 or rahul_sir"
-              class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600" />
+            <label for="tUsername" class="mb-1.5 block text-sm font-medium text-slate-700">Teacher Username / ID</label>
+            <input id="tUsername" type="text" autocomplete="username" required placeholder="e.g. rajesh_sir"
+              class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
           </div>
           <div>
             <label for="tPin" class="mb-1.5 block text-sm font-medium text-slate-700">Login PIN</label>
-            <input id="tPin" type="password" inputmode="numeric" required placeholder="Enter 4-6 digit PIN"
-              class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600" />
+            <div class="relative">
+              <input id="tPin" type="password" inputmode="numeric" required placeholder="••••"
+                class="block w-full rounded-md border border-slate-300 bg-white py-2.5 pl-3 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+              <button type="button" id="togglePinBtn" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-700 focus:outline-none" aria-label="Show PIN">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.46 12C3.73 7.94 7.52 5 12 5s8.27 2.94 9.54 7c-1.27 4.06-5.06 7-9.54 7S3.73 16.06 2.46 12z" /><circle cx="12" cy="12" r="3" /></svg>
+              </button>
+            </div>
           </div>
 
           <div id="loginError" class="hidden rounded-md border border-red-200 bg-red-50 p-2.5 text-xs text-red-700"></div>
 
           <button type="submit" id="loginBtn"
-            class="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-purple-600 py-2.5 text-sm font-medium text-white transition hover:bg-purple-700 disabled:opacity-60">
-            <span>Sign In to Teacher Portal</span>
+            class="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60">
+            <span>Sign In</span>
           </button>
         </div>
-        <div class="mt-4 text-center">
-          <a href="../index.html" class="text-xs text-slate-500 hover:text-slate-800 hover:underline">&larr; Back to Home Portal</a>
+        <div class="mt-4 border-t border-slate-100 pt-4 text-center">
+          <a href="../index.html" class="text-xs font-medium text-slate-500 hover:text-slate-900">&larr; Back to Home Portal</a>
         </div>
       </form>
     </div>
@@ -51,83 +80,129 @@
 
   <!-- ===================== DASHBOARD VIEW ===================== -->
   <div id="dashView" class="hidden min-h-screen flex-col">
-    <!-- Header -->
+    <!-- Top Header -->
     <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <div class="flex items-center gap-3">
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-600 text-white font-bold">
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-sm font-bold text-white">
             <span id="teacher-avatar">T</span>
           </div>
           <div>
-            <h1 id="teacher-name" class="text-sm font-semibold text-slate-900">Teacher Name</h1>
-            <p id="teacher-sub" class="text-xs text-slate-500">Instructor Portal</p>
+            <div class="flex items-center gap-2">
+              <h1 id="teacher-name" class="text-sm font-semibold leading-tight text-slate-900">Teacher Name</h1>
+              <span id="teacher-subject-badge" class="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">Faculty</span>
+            </div>
+            <p id="centre-name-header" class="text-xs text-slate-500">Coaching Centre · Instructor Portal</p>
           </div>
         </div>
-        <button id="logout-btn" class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none">
-          Sign Out
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="refresh-data-btn" type="button" class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+            <svg id="refresh-icon" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0018.4 9M18.4 9L20 9M5.6 15L4 15" /></svg>
+            <span class="hidden sm:inline">Refresh</span>
+          </button>
+          <button id="logout-btn" type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+            Sign Out
+          </button>
+        </div>
       </div>
     </header>
 
     <!-- Main Content -->
     <main class="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-6 sm:px-6">
+      
+      <!-- Top Metrics Overview -->
+      <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Active Batches</p>
+          <div class="mt-2 flex items-baseline justify-between">
+            <span id="metric-batches" class="tabular text-2xl font-bold text-slate-900">0</span>
+            <span id="metric-my-batches" class="text-xs text-slate-500">All institute batches</span>
+          </div>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Scheduled Exams</p>
+          <div class="mt-2 flex items-baseline justify-between">
+            <span id="metric-exams" class="tabular text-2xl font-bold text-slate-900">0</span>
+            <span id="metric-exams-sub" class="text-xs text-slate-500">Ready for marks entry</span>
+          </div>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Today's Date</p>
+          <div class="mt-2 flex items-baseline justify-between">
+            <span id="metric-today" class="text-lg font-semibold text-slate-900">—</span>
+            <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Live Session
+            </span>
+          </div>
+        </div>
+      </section>
+
       <!-- Navigation Tabs -->
       <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
-        <button id="tab-attendance-btn" class="tab-btn rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white">
-          Mark Attendance
+        <button id="tab-attendance-btn" type="button" class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+          1. Mark Attendance
         </button>
-        <button id="tab-code-btn" class="tab-btn rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-          Generate Daily Code
+        <button id="tab-code-btn" type="button" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+          2. Generate Attendance OTP
         </button>
-        <button id="tab-marks-btn" class="tab-btn rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-          Enter Marks
+        <button id="tab-marks-btn" type="button" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+          3. Enter Exam Marks
         </button>
       </div>
 
-      <!-- Alert / Toast -->
-      <div id="toast" class="hidden rounded-lg border p-3 text-xs font-medium" role="alert"></div>
-
-      <!-- SECTION 1: ATTENDANCE REGISTER -->
+      <!-- ===================== SECTION 1: ATTENDANCE REGISTER ===================== -->
       <section id="section-attendance" class="space-y-4">
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Select Batch</label>
-              <select id="att-batch" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none">
-                <option value="">Select Batch</option>
+              <label for="att-batch" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Select Batch</label>
+              <select id="att-batch" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900">
+                <option value="">Choose a batch…</option>
               </select>
             </div>
             <div>
-              <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Date</label>
-              <input type="date" id="att-date" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none" />
+              <label for="att-date" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Attendance Date</label>
+              <input type="date" id="att-date" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
             </div>
             <div class="flex items-end">
-              <button id="load-students-btn" class="w-full rounded-md bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-800">
-                Load Class Roster
+              <button id="load-students-btn" type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800">
+                Load Batch Roster
               </button>
             </div>
           </div>
         </div>
 
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-            <h2 class="text-sm font-semibold text-slate-900">Student Register</h2>
-            <button id="save-attendance-btn" class="hidden rounded-md bg-emerald-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-emerald-700">
-              Save Attendance
-            </button>
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-3.5">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900">Classroom Register</h2>
+              <p id="att-summary-text" class="text-xs text-slate-500">Select a batch above to mark daily attendance.</p>
+            </div>
+            <div id="att-actions-bar" class="hidden items-center gap-2">
+              <button id="mark-all-present-btn" type="button" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                Mark All Present
+              </button>
+              <button id="save-attendance-btn" type="button" class="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-60">
+                Save Attendance
+              </button>
+            </div>
           </div>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 text-sm">
-              <thead class="bg-slate-50 text-left text-xs font-medium text-slate-500">
+              <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th class="px-5 py-3">Admission No</th>
-                  <th class="px-5 py-3">Student Name</th>
-                  <th class="px-5 py-3 text-center">Status</th>
+                  <th class="w-12 px-5 py-3">#</th>
+                  <th class="px-4 py-3">Student Name</th>
+                  <th class="px-4 py-3">Admission No</th>
+                  <th class="px-5 py-3 text-right">Attendance Status</th>
                 </tr>
               </thead>
-              <tbody id="att-table-body" class="divide-y divide-slate-100">
+              <tbody id="att-table-body" class="divide-y divide-slate-100 bg-white">
                 <tr>
-                  <td colspan="3" class="px-5 py-6 text-center text-xs text-slate-500">Select a batch and click "Load Class Roster".</td>
+                  <td colspan="4" class="px-5 py-10 text-center text-xs text-slate-500">Select a batch and click "Load Batch Roster" to begin.</td>
                 </tr>
               </tbody>
             </table>
@@ -135,49 +210,64 @@
         </div>
       </section>
 
-      <!-- SECTION 2: ATTENDANCE CODE GENERATOR -->
+      <!-- ===================== SECTION 2: ATTENDANCE CODE GENERATOR ===================== -->
       <section id="section-code" class="hidden space-y-4">
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 class="text-base font-semibold text-slate-900">Generate Student Sign-in Code</h2>
-          <p class="mt-0.5 text-xs text-slate-500">Students can enter this 6-digit code on their portal to self-verify today's attendance.</p>
-          
-          <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Batch</label>
-              <select id="code-batch" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none">
-                <option value="">Select Batch</option>
-              </select>
-            </div>
-            <div>
-              <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Validity (Minutes)</label>
-              <input type="number" id="code-validity" value="60" min="5" max="360" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none" />
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="text-base font-semibold text-slate-900">Generate Classroom Check-in Code</h2>
+            <p class="mt-1 text-xs leading-relaxed text-slate-500">Share this 6-digit OTP on the classroom board. Students can enter it on their Student Portal to mark themselves Present.</p>
+            
+            <div class="mt-5 space-y-4">
+              <div>
+                <label for="code-batch" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Target Batch</label>
+                <select id="code-batch" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900">
+                  <option value="">Choose a batch…</option>
+                </select>
+              </div>
+              <div>
+                <label for="code-validity" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Code Validity (Minutes)</label>
+                <input type="number" id="code-validity" value="60" min="5" max="720" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
+              </div>
+              <button id="gen-code-btn" type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60">
+                Generate 6-Digit OTP
+              </button>
             </div>
           </div>
 
-          <button id="gen-code-btn" class="mt-4 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700">
-            Generate Code
-          </button>
+          <div class="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+            <div id="code-empty-state" class="py-8">
+              <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+              </div>
+              <p class="text-sm font-semibold text-slate-900">No Active Code Selected</p>
+              <p class="mt-1 text-xs text-slate-500">Select a batch on the left and click Generate.</p>
+            </div>
 
-          <div id="code-display" class="mt-6 hidden rounded-xl border border-purple-200 bg-purple-50 p-6 text-center">
-            <p class="text-xs font-medium uppercase text-purple-700">Active Classroom OTP</p>
-            <p id="generated-otp" class="mt-2 text-4xl font-extrabold tracking-widest text-purple-900">------</p>
-            <p id="code-expiry-text" class="mt-2 text-xs text-purple-600">Valid for 60 minutes</p>
+            <div id="code-display" class="hidden w-full rounded-xl border border-slate-200 bg-slate-50 p-6">
+              <span id="code-batch-label" class="inline-flex rounded-full border border-slate-300 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-700">Batch</span>
+              <p class="mt-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Classroom Check-In OTP</p>
+              <p id="generated-otp" class="tabular mt-2 font-mono text-4xl font-bold tracking-widest text-slate-900">------</p>
+              <p id="code-expiry-text" class="mt-2 text-xs text-emerald-700 font-medium">Valid for 60 minutes</p>
+              <button id="copy-otp-btn" type="button" class="mt-4 inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100">
+                Copy OTP Code
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- SECTION 3: MARKS ENTRY -->
+      <!-- ===================== SECTION 3: MARKS ENTRY ===================== -->
       <section id="section-marks" class="hidden space-y-4">
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Select Examination</label>
-              <select id="marks-exam" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none">
-                <option value="">Select Exam</option>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="sm:col-span-2">
+              <label for="marks-exam" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Select Examination</label>
+              <select id="marks-exam" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900">
+                <option value="">Choose an exam…</option>
               </select>
             </div>
             <div class="flex items-end">
-              <button id="load-marks-roster-btn" class="w-full rounded-md bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-800">
+              <button id="load-marks-roster-btn" type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800">
                 Open Marks Sheet
               </button>
             </div>
@@ -185,30 +275,40 @@
         </div>
 
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-            <h2 class="text-sm font-semibold text-slate-900">Marks Entry Sheet</h2>
-            <button id="save-marks-btn" class="hidden rounded-md bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800">
-              Submit Scores
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-3.5">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 id="marks-sheet-title" class="text-sm font-semibold text-slate-900">Marks Evaluation Sheet</h2>
+                <span id="marks-exam-badge" class="hidden rounded-full border px-2 py-0.5 text-[11px] font-medium"></span>
+              </div>
+              <p id="marks-sheet-sub" class="text-xs text-slate-500">Select an exam above to enter or update student scores.</p>
+            </div>
+            <button id="save-marks-btn" type="button" class="hidden items-center gap-1.5 rounded-md bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-60">
+              Save Marks
             </button>
           </div>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 text-sm">
-              <thead class="bg-slate-50 text-left text-xs font-medium text-slate-500">
+              <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th class="px-5 py-3">Student</th>
-                  <th class="px-5 py-3">Marks Obtained</th>
-                  <th class="px-5 py-3">Remarks</th>
+                  <th class="w-12 px-5 py-3">#</th>
+                  <th class="px-4 py-3">Student</th>
+                  <th class="px-4 py-3">Admission No</th>
+                  <th class="px-4 py-3">Marks Obtained</th>
+                  <th class="px-4 py-3">Percentage</th>
+                  <th class="px-5 py-3">Instructor Remarks</th>
                 </tr>
               </thead>
-              <tbody id="marks-table-body" class="divide-y divide-slate-100">
+              <tbody id="marks-table-body" class="divide-y divide-slate-100 bg-white">
                 <tr>
-                  <td colspan="3" class="px-5 py-6 text-center text-xs text-slate-500">Choose an exam and click "Open Marks Sheet".</td>
+                  <td colspan="6" class="px-5 py-10 text-center text-xs text-slate-500">Choose an examination and click "Open Marks Sheet".</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
       </section>
+
     </main>
   </div>
 
@@ -216,53 +316,60 @@
     import { supabase } from '../js/auth.js';
 
     const TEACHER_SESSION_KEY = 'cc_teacher_session';
-    const loginView = document.getElementById('loginView');
-    const dashView = document.getElementById('dashView');
-    const loginForm = document.getElementById('loginForm');
-    const loginError = document.getElementById('loginError');
-    const loginBtn = document.getElementById('loginBtn');
-    const toast = document.getElementById('toast');
+    const $ = (id) => document.getElementById(id);
 
     let currentTeacher = null;
     let batches = [];
-    let currentBatchStudents = [];
+    let exams = [];
+    let currentAttendanceRows = [];
+    let activeExamObj = null;
 
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('att-date').value = today;
+    $('att-date').value = today;
+    $('metric-today').textContent = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function toast(message, type = 'success') {
+      const el = document.createElement('div');
+      const isErr = type === 'error';
+      el.className = `toast-in pointer-events-auto flex items-start gap-2.5 rounded-lg border bg-white p-3.5 text-sm shadow-lg ${
+        isErr ? 'border-red-200 text-red-800' : 'border-slate-200 text-slate-800'
+      }`;
+      el.innerHTML = (isErr
+        ? '<svg class="mt-0.5 h-4 w-4 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+        : '<svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>') +
+        `<p class="flex-1 text-xs font-medium leading-5">${esc(message)}</p>`;
+      $('toastRegion').appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
 
     function showLoginError(msg) {
-      if (!msg) {
-        loginError.classList.add('hidden');
-        loginError.textContent = '';
-      } else {
-        loginError.textContent = msg;
-        loginError.classList.remove('hidden');
-      }
+      const err = $('loginError');
+      err.textContent = msg || '';
+      err.classList.toggle('hidden', !msg);
     }
 
-    function showToast(msg, isError = false) {
-      toast.textContent = msg;
-      toast.className = `rounded-lg p-3 text-xs font-medium border ${
-        isError ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-      }`;
-      toast.classList.remove('hidden');
-      setTimeout(() => toast.classList.add('hidden'), 4000);
-    }
+    $('togglePinBtn').addEventListener('click', () => {
+      const input = $('tPin');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    });
 
-    // Login Form Submit (Username + PIN check against teachers table)
-    loginForm.addEventListener('submit', async (e) => {
+    // Login Submit
+    $('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       showLoginError('');
-      const username = document.getElementById('tUsername').value.trim();
-      const pin = document.getElementById('tPin').value.trim();
+      const username = $('tUsername').value.trim();
+      const pin = $('tPin').value.trim();
 
       if (!username || !pin) {
         showLoginError('Please enter both your Teacher Username and PIN.');
         return;
       }
 
-      loginBtn.disabled = true;
-      loginBtn.textContent = 'Verifying...';
+      const btn = $('loginBtn');
+      btn.disabled = true;
+      btn.textContent = 'Verifying…';
 
       try {
         const { data, error } = await supabase
@@ -280,40 +387,46 @@
 
         currentTeacher = data;
         localStorage.setItem(TEACHER_SESSION_KEY, JSON.stringify(data));
-        renderDashboard();
+        toast(`Welcome back, ${data.full_name || data.username}!`);
+        await renderDashboard();
       } catch (err) {
         showLoginError(err.message || 'Unable to sign in. Please try again.');
       } finally {
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Sign In to Teacher Portal';
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
       }
     });
 
     // Logout
-    document.getElementById('logout-btn').addEventListener('click', () => {
+    $('logout-btn').addEventListener('click', () => {
       localStorage.removeItem(TEACHER_SESSION_KEY);
       currentTeacher = null;
-      dashView.classList.add('hidden');
-      dashView.classList.remove('flex');
-      loginView.classList.remove('hidden');
-      document.getElementById('tUsername').value = '';
-      document.getElementById('tPin').value = '';
+      $('dashView').classList.add('hidden');
+      $('dashView').classList.remove('flex');
+      $('loginView').classList.remove('hidden');
+      $('tUsername').value = '';
+      $('tPin').value = '';
     });
 
-    // Tab Switching
+    $('refresh-data-btn').addEventListener('click', () => {
+      $('refresh-icon').classList.add('animate-spin');
+      renderDashboard().finally(() => setTimeout(() => $('refresh-icon').classList.remove('animate-spin'), 300));
+    });
+
+    // Tabs Navigation
     const tabs = {
-      attendance: { btn: document.getElementById('tab-attendance-btn'), sec: document.getElementById('section-attendance') },
-      code: { btn: document.getElementById('tab-code-btn'), sec: document.getElementById('section-code') },
-      marks: { btn: document.getElementById('tab-marks-btn'), sec: document.getElementById('section-marks') }
+      attendance: { btn: $('tab-attendance-btn'), sec: $('section-attendance') },
+      code: { btn: $('tab-code-btn'), sec: $('section-code') },
+      marks: { btn: $('tab-marks-btn'), sec: $('section-marks') }
     };
 
     function activateTab(activeKey) {
-      Object.keys(tabs).forEach(k => {
+      Object.keys(tabs).forEach((k) => {
         const isTarget = k === activeKey;
         tabs[k].sec.classList.toggle('hidden', !isTarget);
         tabs[k].btn.className = isTarget
-          ? 'tab-btn rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white'
-          : 'tab-btn rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50';
+          ? 'inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition'
+          : 'inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50';
       });
     }
 
@@ -321,108 +434,184 @@
     tabs.code.btn.addEventListener('click', () => activateTab('code'));
     tabs.marks.btn.addEventListener('click', () => activateTab('marks'));
 
+    // Load Dashboard Data
     async function renderDashboard() {
       if (!currentTeacher) return;
-      loginView.classList.add('hidden');
-      dashView.classList.remove('hidden');
-      dashView.classList.add('flex');
+      $('loginView').classList.add('hidden');
+      $('dashView').classList.remove('hidden');
+      $('dashView').classList.add('flex');
 
-      const tName = currentTeacher.full_name || currentTeacher.name || currentTeacher.username || 'Teacher';
-      document.getElementById('teacher-name').textContent = tName;
-      document.getElementById('teacher-avatar').textContent = tName.charAt(0).toUpperCase();
-      document.getElementById('teacher-sub').textContent = currentTeacher.subject ? `${currentTeacher.subject} · @${currentTeacher.username}` : `Instructor · @${currentTeacher.username}`;
-
-      const [batchRes, examRes] = await Promise.all([
-        supabase.from('batches').select('id, name').order('name'),
-        supabase.from('exams').select('id, title, max_marks').order('created_at', { ascending: false })
+      const [teacherRes, centreRes, batchRes, examRes] = await Promise.all([
+        supabase.from('teachers').select('*').eq('id', currentTeacher.id).maybeSingle(),
+        supabase.from('centre_settings').select('centre_name').limit(1).maybeSingle(),
+        supabase.from('batches').select('id, name, subject, teacher_name, schedule_time').order('name'),
+        supabase.from('exams').select('id, title, batch_id, exam_date, max_marks, status, batches(name)').order('exam_date', { ascending: false })
       ]);
+
+      if (teacherRes.data) {
+        currentTeacher = teacherRes.data;
+        localStorage.setItem(TEACHER_SESSION_KEY, JSON.stringify(currentTeacher));
+      }
+
+      const tName = currentTeacher.full_name || currentTeacher.username || 'Teacher';
+      $('teacher-name').textContent = tName;
+      $('teacher-avatar').textContent = tName.trim().charAt(0).toUpperCase();
+      $('teacher-subject-badge').textContent = currentTeacher.subject || 'Faculty';
+
+      const cName = centreRes.data?.centre_name || 'Coaching Centre';
+      $('centre-name-header').textContent = `${cName} · @${currentTeacher.username}`;
 
       batches = batchRes.data || [];
-      const batchOptions = '<option value="">Select Batch</option>' + batches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-      document.getElementById('att-batch').innerHTML = batchOptions;
-      document.getElementById('code-batch').innerHTML = batchOptions;
+      exams = examRes.data || [];
 
-      const exams = examRes.data || [];
-      document.getElementById('marks-exam').innerHTML = '<option value="">Select Exam</option>' + 
-        exams.map(e => `<option value="${e.id}" data-max="${e.max_marks}">${e.title} (Max: ${e.max_marks})</option>`).join('');
+      $('metric-batches').textContent = batches.length;
+      $('metric-exams').textContent = exams.length;
+
+      const batchOptions = '<option value="">Choose a batch…</option>' + batches.map((b) =>
+        `<option value="${esc(b.id)}">${esc(b.name)}${b.schedule_time ? ` (${esc(b.schedule_time)})` : ''}</option>`
+      ).join('');
+
+      const prevAttBatch = $('att-batch').value;
+      const prevCodeBatch = $('code-batch').value;
+      $('att-batch').innerHTML = batchOptions;
+      $('code-batch').innerHTML = batchOptions;
+      if (prevAttBatch) $('att-batch').value = prevAttBatch;
+      if (prevCodeBatch) $('code-batch').value = prevCodeBatch;
+
+      const prevExam = $('marks-exam').value;
+      $('marks-exam').innerHTML = '<option value="">Choose an exam…</option>' + exams.map((e) => {
+        const bName = e.batches?.name || 'Batch';
+        const st = String(e.status || 'draft').toUpperCase();
+        return `<option value="${esc(e.id)}">${esc(e.title)} — ${esc(bName)} (Max: ${e.max_marks} · ${st})</option>`;
+      }).join('');
+      if (prevExam) $('marks-exam').value = prevExam;
     }
 
-    // 1. Attendance Roster
-    document.getElementById('load-students-btn').addEventListener('click', async () => {
-      const batchId = document.getElementById('att-batch').value;
-      const date = document.getElementById('att-date').value;
-      if (!batchId || !date) { showToast('Select both batch and date', true); return; }
+    // ===================== 1. ATTENDANCE LOGIC =====================
+    function updateAttendanceSummary() {
+      if (!currentAttendanceRows.length) return;
+      const p = currentAttendanceRows.filter((r) => r.status === 'present').length;
+      const a = currentAttendanceRows.filter((r) => r.status === 'absent').length;
+      const e = currentAttendanceRows.filter((r) => r.status === 'excused').length;
+      $('att-summary-text').textContent = `Total: ${currentAttendanceRows.length} students · Present: ${p} · Absent: ${a}${e ? ` · Excused: ${e}` : ''}`;
+    }
 
-      const [stuRes, attRes] = await Promise.all([
-        supabase.from('students').select('id, full_name, admission_no').eq('batch_id', batchId).order('admission_no'),
-        supabase.from('attendance').select('student_id, status').eq('date', date)
-      ]);
-
-      currentBatchStudents = stuRes.data || [];
-      const attMap = new Map((attRes.data || []).map(a => [String(a.student_id), String(a.status || '').toLowerCase()]));
-
-      const tbody = document.getElementById('att-table-body');
-      if (currentBatchStudents.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="px-5 py-6 text-center text-xs text-slate-500">No students enrolled in this batch.</td></tr>';
-        document.getElementById('save-attendance-btn').classList.add('hidden');
+    function renderAttendanceRows() {
+      const tbody = $('att-table-body');
+      if (!currentAttendanceRows.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-10 text-center text-xs text-slate-500">No students enrolled in this batch yet.</td></tr>';
+        $('att-actions-bar').classList.add('hidden');
+        $('att-actions-bar').classList.remove('flex');
         return;
       }
 
-      tbody.innerHTML = currentBatchStudents.map(s => {
-        const curStatus = attMap.get(String(s.id)) || 'present';
+      $('att-actions-bar').classList.remove('hidden');
+      $('att-actions-bar').classList.add('flex');
+
+      tbody.innerHTML = currentAttendanceRows.map((row, idx) => {
+        const btnClass = (type, activeClass) =>
+          row.status === type
+            ? activeClass
+            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50';
+
         return `
-          <tr data-student="${s.id}">
-            <td class="px-5 py-3 font-mono text-xs text-slate-500">${s.admission_no || '—'}</td>
-            <td class="px-5 py-3 font-medium text-slate-900">${s.full_name}</td>
-            <td class="px-5 py-3 text-center">
-              <select class="att-status rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold ${curStatus === 'present' ? 'text-emerald-700 bg-emerald-50' : 'text-red-700 bg-red-50'}">
-                <option value="present" ${curStatus === 'present' ? 'selected' : ''}>Present</option>
-                <option value="absent" ${curStatus === 'absent' ? 'selected' : ''}>Absent</option>
-                <option value="excused" ${curStatus === 'excused' ? 'selected' : ''}>Excused</option>
-              </select>
+          <tr data-idx="${idx}" class="hover:bg-slate-50/70">
+            <td class="tabular px-5 py-3 text-xs text-slate-400">${idx + 1}</td>
+            <td class="px-4 py-3 font-medium text-slate-900">${esc(row.full_name)}</td>
+            <td class="px-4 py-3 font-mono text-xs text-slate-500">${esc(row.admission_no || '—')}</td>
+            <td class="px-5 py-3 text-right">
+              <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 gap-1">
+                <button type="button" data-set-status="present" class="rounded-md border px-2.5 py-1 text-xs font-semibold transition ${btnClass('present', 'border-emerald-600 bg-emerald-600 text-white shadow-sm')}">Present</button>
+                <button type="button" data-set-status="absent" class="rounded-md border px-2.5 py-1 text-xs font-semibold transition ${btnClass('absent', 'border-red-600 bg-red-600 text-white shadow-sm')}">Absent</button>
+                <button type="button" data-set-status="excused" class="rounded-md border px-2.5 py-1 text-xs font-semibold transition ${btnClass('excused', 'border-amber-500 bg-amber-500 text-white shadow-sm')}">Excused</button>
+              </div>
             </td>
           </tr>
         `;
       }).join('');
 
-      document.querySelectorAll('.att-status').forEach(sel => {
-        sel.addEventListener('change', (e) => {
-          e.target.className = `att-status rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold ${
-            e.target.value === 'present' ? 'text-emerald-700 bg-emerald-50' : 'text-red-700 bg-red-50'
-          }`;
-        });
-      });
+      updateAttendanceSummary();
+    }
 
-      document.getElementById('save-attendance-btn').classList.remove('hidden');
+    $('att-table-body').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-set-status]');
+      if (!btn) return;
+      const tr = btn.closest('tr[data-idx]');
+      if (!tr) return;
+      const idx = Number(tr.dataset.idx);
+      currentAttendanceRows[idx].status = btn.dataset.setStatus;
+      renderAttendanceRows();
     });
 
-    document.getElementById('save-attendance-btn').addEventListener('click', async () => {
-      const date = document.getElementById('att-date').value;
-      const rows = document.querySelectorAll('#att-table-body tr[data-student]');
-      const payloads = [];
+    $('mark-all-present-btn').addEventListener('click', () => {
+      currentAttendanceRows.forEach((r) => { r.status = 'present'; });
+      renderAttendanceRows();
+    });
 
-      rows.forEach(r => {
-        payloads.push({
-          student_id: r.dataset.student,
-          date: date,
-          status: r.querySelector('.att-status').value,
-          method: 'Manual'
-        });
-      });
+    $('load-students-btn').addEventListener('click', async () => {
+      const batchId = $('att-batch').value;
+      const date = $('att-date').value;
+      if (!batchId || !date) { toast('Please select both a batch and date.', 'error'); return; }
+
+      $('att-table-body').innerHTML = '<tr><td colspan="4" class="px-5 py-10 text-center text-xs text-slate-500">Loading class roster…</td></tr>';
+
+      const [stuRes, attRes] = await Promise.all([
+        supabase.from('students').select('id, full_name, admission_no').eq('batch_id', batchId).order('full_name'),
+        supabase.from('attendance').select('student_id, status').eq('date', date)
+      ]);
+
+      if (stuRes.error) { toast(stuRes.error.message, 'error'); return; }
+
+      const attMap = new Map((attRes.data || []).map((a) => [String(a.student_id), String(a.status || 'present').toLowerCase()]));
+      currentAttendanceRows = (stuRes.data || []).map((s) => ({
+        id: s.id,
+        full_name: s.full_name,
+        admission_no: s.admission_no,
+        status: attMap.get(String(s.id)) || 'present'
+      }));
+
+      renderAttendanceRows();
+    });
+
+    $('save-attendance-btn').addEventListener('click', async () => {
+      const date = $('att-date').value;
+      if (!currentAttendanceRows.length || !date) return;
+
+      const btn = $('save-attendance-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+
+      const payloads = currentAttendanceRows.map((r) => ({
+        student_id: r.id,
+        date: date,
+        status: r.status,
+        method: 'Manual'
+      }));
 
       const { error } = await supabase.from('attendance').upsert(payloads, { onConflict: 'student_id,date' });
-      if (error) { showToast(error.message, true); }
-      else { showToast('Attendance register saved successfully!'); }
+      btn.disabled = false;
+      btn.textContent = 'Save Attendance';
+
+      if (error) {
+        toast(error.message || 'Could not save attendance.', 'error');
+      } else {
+        toast(`Attendance saved for ${payloads.length} students!`);
+      }
     });
 
-    // 2. Attendance Code Generator
-    document.getElementById('gen-code-btn').addEventListener('click', async () => {
-      const batchId = document.getElementById('code-batch').value;
-      const mins = Number(document.getElementById('code-validity').value) || 60;
-      if (!batchId) { showToast('Select a batch first', true); return; }
+    // ===================== 2. OTP CODE GENERATOR =====================
+    $('gen-code-btn').addEventListener('click', async () => {
+      const batchId = $('code-batch').value;
+      const mins = Number($('code-validity').value) || 60;
+      if (!batchId) { toast('Please select a target batch first.', 'error'); return; }
+
+      const btn = $('gen-code-btn');
+      btn.disabled = true;
+      btn.textContent = 'Generating…';
 
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + mins * 60000).toISOString();
+      const batchObj = batches.find((b) => String(b.id) === String(batchId));
 
       const { error } = await supabase.from('attendance_codes').insert({
         batch_id: batchId,
@@ -430,81 +619,175 @@
         expires_at: expiresAt
       });
 
+      btn.disabled = false;
+      btn.textContent = 'Generate 6-Digit OTP';
+
       if (error) {
-        showToast(error.message, true);
+        toast(error.message, 'error');
       } else {
-        document.getElementById('generated-otp').textContent = code;
-        document.getElementById('code-expiry-text').textContent = `Expires in ${mins} minutes`;
-        document.getElementById('code-display').classList.remove('hidden');
-        showToast('Active sign-in code generated!');
+        $('code-empty-state').classList.add('hidden');
+        $('code-display').classList.remove('hidden');
+        $('code-batch-label').textContent = batchObj?.name || 'Selected Batch';
+        $('generated-otp').textContent = code;
+        $('code-expiry-text').textContent = `Active for ${mins} minutes`;
+        toast('Classroom Check-In OTP generated!');
       }
     });
 
-    // 3. Marks Entry
-    document.getElementById('load-marks-roster-btn').addEventListener('click', async () => {
-      const examSelect = document.getElementById('marks-exam');
-      const examId = examSelect.value;
-      if (!examId) { showToast('Please select an exam', true); return; }
+    $('copy-otp-btn').addEventListener('click', () => {
+      const otp = $('generated-otp').textContent.trim();
+      if (!otp || otp === '------') return;
+      navigator.clipboard?.writeText(otp);
+      toast(`OTP ${otp} copied to clipboard!`);
+    });
 
-      const maxMarks = Number(examSelect.selectedOptions[0].dataset.max || 100);
+    // ===================== 3. MARKS ENTRY (Batch-Filtered + Live %) =====================
+    function formatPctBadge(scoredVal, maxMarks) {
+      if (scoredVal === '' || scoredVal === null || isNaN(Number(scoredVal))) {
+        return '<span class="text-xs text-slate-400">—</span>';
+      }
+      const pct = Math.round((Number(scoredVal) / maxMarks) * 100);
+      let cls = 'border-emerald-200 bg-emerald-50 text-emerald-700';
+      if (pct < 40) cls = 'border-red-200 bg-red-50 text-red-700';
+      else if (pct < 60) cls = 'border-amber-200 bg-amber-50 text-amber-700';
+      return `<span class="tabular inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold ${cls}">${pct}%</span>`;
+    }
+
+    $('load-marks-roster-btn').addEventListener('click', async () => {
+      const examId = $('marks-exam').value;
+      if (!examId) { toast('Please select an examination first.', 'error'); return; }
+
+      activeExamObj = exams.find((x) => String(x.id) === String(examId));
+      if (!activeExamObj) return;
+
+      const maxMarks = Number(activeExamObj.max_marks || 100);
+      const tbody = $('marks-table-body');
+      tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-10 text-center text-xs text-slate-500">Loading batch students &amp; marks…</td></tr>';
+
+      // Filter students strictly by the exam's assigned batch_id
+      let stuQuery = supabase.from('students').select('id, full_name, admission_no').order('full_name');
+      if (activeExamObj.batch_id) {
+        stuQuery = stuQuery.eq('batch_id', activeExamObj.batch_id);
+      }
 
       const [studentsRes, marksRes] = await Promise.all([
-        supabase.from('students').select('id, full_name, admission_no').order('admission_no'),
+        stuQuery,
         supabase.from('marks').select('*').eq('exam_id', examId)
       ]);
 
-      const marksMap = new Map((marksRes.data || []).map(m => [String(m.student_id), m]));
-      const list = studentsRes.data || [];
-      const tbody = document.getElementById('marks-table-body');
+      if (studentsRes.error) { toast(studentsRes.error.message, 'error'); return; }
 
-      tbody.innerHTML = list.map(s => {
+      const marksMap = new Map((marksRes.data || []).map((m) => [String(m.student_id), m]));
+      const list = studentsRes.data || [];
+
+      $('marks-sheet-title').textContent = `${activeExamObj.title} (${activeExamObj.batches?.name || 'Batch'})`;
+      $('marks-sheet-sub').textContent = `Maximum Marks: ${maxMarks} · Enter scores below and click Save Marks.`;
+
+      const badge = $('marks-exam-badge');
+      const isPub = String(activeExamObj.status || '').toLowerCase() === 'published';
+      badge.textContent = isPub ? 'Published' : 'Draft';
+      badge.className = `inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+        isPub ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'
+      }`;
+      badge.classList.remove('hidden');
+
+      if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-10 text-center text-xs text-slate-500">No students enrolled in this exam\'s batch.</td></tr>';
+        $('save-marks-btn').classList.add('hidden');
+        return;
+      }
+
+      tbody.innerHTML = list.map((s, i) => {
         const record = marksMap.get(String(s.id));
+        const val = record?.marks_obtained ?? '';
         return `
-          <tr data-student="${s.id}">
-            <td class="px-5 py-3">
-              <span class="font-medium text-slate-900">${s.full_name}</span>
-              <span class="block font-mono text-xs text-slate-400">${s.admission_no || ''}</span>
-            </td>
-            <td class="px-5 py-3">
+          <tr data-student="${esc(s.id)}" data-existing-id="${esc(record?.id || '')}" class="hover:bg-slate-50/70">
+            <td class="tabular px-5 py-3 text-xs text-slate-400">${i + 1}</td>
+            <td class="px-4 py-3 font-medium text-slate-900">${esc(s.full_name)}</td>
+            <td class="px-4 py-3 font-mono text-xs text-slate-500">${esc(s.admission_no || '—')}</td>
+            <td class="px-4 py-3">
               <div class="flex items-center gap-1.5">
-                <input type="number" step="0.5" min="0" max="${maxMarks}" value="${record?.marks_obtained ?? ''}" placeholder="0" 
-                  class="mark-input w-24 rounded-md border border-slate-300 px-2 py-1 text-sm font-semibold text-slate-900 focus:border-slate-900 focus:outline-none" />
+                <input type="number" step="any" min="0" max="${maxMarks}" value="${esc(val)}" placeholder="—"
+                  class="mark-input tabular w-24 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-semibold text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
                 <span class="text-xs text-slate-400">/ ${maxMarks}</span>
               </div>
             </td>
+            <td class="pct-cell px-4 py-3">${formatPctBadge(val, maxMarks)}</td>
             <td class="px-5 py-3">
-              <input type="text" value="${record?.remarks ?? ''}" placeholder="Optional remark" 
-                class="remark-input w-full rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-700 focus:border-slate-900 focus:outline-none" />
+              <input type="text" maxlength="120" value="${esc(record?.remarks ?? '')}" placeholder="Optional remark"
+                class="remark-input w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-700 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
             </td>
           </tr>
         `;
       }).join('');
 
-      document.getElementById('save-marks-btn').classList.remove('hidden');
+      $('save-marks-btn').classList.remove('hidden');
+      $('save-marks-btn').classList.add('inline-flex');
     });
 
-    document.getElementById('save-marks-btn').addEventListener('click', async () => {
-      const examId = document.getElementById('marks-exam').value;
+    $('marks-table-body').addEventListener('input', (e) => {
+      if (!e.target.classList.contains('mark-input') || !activeExamObj) return;
+      const tr = e.target.closest('tr');
+      const maxMarks = Number(activeExamObj.max_marks || 100);
+      tr.querySelector('.pct-cell').innerHTML = formatPctBadge(e.target.value.trim(), maxMarks);
+    });
+
+    $('save-marks-btn').addEventListener('click', async () => {
+      if (!activeExamObj) return;
+      const examId = activeExamObj.id;
+      const maxMarks = Number(activeExamObj.max_marks || 100);
       const rows = document.querySelectorAll('#marks-table-body tr[data-student]');
-      const payloads = [];
+      const inserts = [];
+      const updates = [];
 
-      rows.forEach(r => {
+      for (const r of rows) {
         const marksVal = r.querySelector('.mark-input').value.trim();
-        if (marksVal !== '') {
-          payloads.push({
-            exam_id: examId,
-            student_id: r.dataset.student,
-            marks_obtained: Number(marksVal),
-            remarks: r.querySelector('.remark-input').value.trim() || null
-          });
+        if (marksVal === '') continue;
+        const num = Number(marksVal);
+        if (isNaN(num) || num < 0 || num > maxMarks) {
+          toast(`Marks must be between 0 and ${maxMarks}.`, 'error');
+          r.querySelector('.mark-input').focus();
+          return;
         }
-      });
+        const item = {
+          exam_id: examId,
+          student_id: r.dataset.student,
+          marks_obtained: num,
+          remarks: r.querySelector('.remark-input').value.trim() || null
+        };
+        if (r.dataset.existingId) {
+          updates.push({ id: r.dataset.existingId, ...item });
+        } else {
+          inserts.push(item);
+        }
+      }
 
-      if (payloads.length === 0) { showToast('No marks entered to save', true); return; }
+      if (!inserts.length && !updates.length) {
+        toast('Please enter marks for at least one student.', 'error');
+        return;
+      }
 
-      const { error } = await supabase.from('marks').upsert(payloads, { onConflict: 'exam_id,student_id' });
-      if (error) { showToast(error.message, true); }
-      else { showToast('Exam marks uploaded successfully!'); }
+      const btn = $('save-marks-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+
+      try {
+        if (inserts.length) {
+          const { error } = await supabase.from('marks').insert(inserts);
+          if (error) throw error;
+        }
+        if (updates.length) {
+          const { error } = await supabase.from('marks').upsert(updates, { onConflict: 'id' });
+          if (error) throw error;
+        }
+        toast(`Scores saved for ${inserts.length + updates.length} students!`);
+        $('load-marks-roster-btn').click();
+      } catch (err) {
+        toast(err.message || 'Could not save marks.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Marks';
+      }
     });
 
     // Auto-login if session exists
