@@ -2,13 +2,16 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 export const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function getDashboardPath(role) {
+export function getDashboardPath(role) {
   switch (String(role || '').toLowerCase()) {
     case 'admin':
-    case 'teacher':
       return '/pages/admin.html';
+    case 'teacher':
+      return '/pages/teacher-portal.html';
     case 'student':
       return '/pages/student-portal.html';
+    case 'parent':
+      return '/pages/parent-portal.html';
     default:
       return '/index.html';
   }
@@ -19,6 +22,7 @@ export async function loginUser(email, password) {
     email,
     password
   });
+
   if (authError) throw authError;
 
   const user = authData?.user;
@@ -30,13 +34,13 @@ export async function loginUser(email, password) {
     .eq('id', user.id)
     .maybeSingle();
 
-  const role = profileData?.role || user.user_metadata?.role || 'admin';
+  const role = String(profileData?.role || user.user_metadata?.role || 'admin').toLowerCase();
   const fullName = profileData?.full_name || user.user_metadata?.full_name || user.email.split('@')[0];
 
   const userObj = {
     id: user.id,
     email: user.email,
-    role: String(role).toLowerCase(),
+    role: role,
     full_name: fullName
   };
 
@@ -60,14 +64,16 @@ export async function logoutUser() {
 export async function checkAuth(allowedRoles = []) {
   const profile = await getUserProfile();
   if (!profile) {
-    window.location.replace('../index.html');
+    window.location.replace('/index.html');
     return null;
   }
+
   const role = String(profile.role || '').toLowerCase();
   if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
     window.location.replace(getDashboardPath(role));
     return null;
   }
+
   return profile;
 }
 
@@ -92,7 +98,7 @@ export async function getUserProfile() {
       }
     } catch (_) {}
 
-    // 2. Query profiles table safely with select('*') and maybeSingle()
+    // 2. Query profiles table safely
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
@@ -102,7 +108,7 @@ export async function getUserProfile() {
     const resolvedProfile = {
       id: user.id,
       email: user.email,
-      full_name: profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin',
+      full_name: profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Staff',
       role: String(profile?.role || user.user_metadata?.role || 'admin').toLowerCase()
     };
 

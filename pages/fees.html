@@ -8,7 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 antialiased">
-
   <!-- Auth check overlay -->
   <div id="auth-overlay" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-50">
     <div class="flex items-center gap-2.5 text-sm text-slate-500">
@@ -19,10 +18,8 @@
       Verifying session…
     </div>
   </div>
-
   <!-- Mobile nav backdrop -->
   <div id="nav-backdrop" class="fixed inset-0 z-30 hidden bg-slate-900/40 lg:hidden"></div>
-
   <!-- Sidebar -->
   <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0">
     <div class="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
@@ -34,7 +31,6 @@
         <p class="text-xs text-slate-500">Admin Portal</p>
       </div>
     </div>
-
     <nav class="space-y-1 px-3 py-4">
         <a href="admin.html" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10" /></svg>
@@ -69,7 +65,6 @@
           Settings
         </a>
       </nav>
-
     <div class="border-t border-slate-200 p-4">
       <div class="flex items-center gap-3">
         <div id="sidebar-avatar" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">–</div>
@@ -85,10 +80,8 @@
       </button>
     </div>
   </aside>
-
   <!-- Main -->
   <div class="lg:pl-64">
-
     <!-- Top header -->
     <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div class="flex min-h-16 items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
@@ -97,7 +90,7 @@
         </button>
         <div class="min-w-0 flex-1">
           <h1 class="truncate text-base font-semibold text-slate-900 sm:text-lg">Fees &amp; Transactions</h1>
-          <p class="hidden truncate text-sm text-slate-500 sm:block">Track fee collections, outstanding dues, and payment records</p>
+          <p class="hidden truncate text-sm text-slate-500 sm:block">Track fee collections, edit payments, and manage student fee status</p>
         </div>
         <button type="button" id="record-btn" class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
@@ -105,9 +98,7 @@
         </button>
       </div>
     </header>
-
     <main class="mx-auto max-w-7xl space-y-4 px-4 py-6 sm:px-6 lg:px-8">
-
       <!-- Metrics -->
       <section aria-label="Summary" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -120,7 +111,7 @@
         </div>
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div class="flex items-center justify-between">
-            <p class="text-sm font-medium text-slate-500">Pending Dues</p>
+            <p class="text-sm font-medium text-slate-500">Pending Dues (This Month)</p>
             <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <p id="m-pending" class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">—</p>
@@ -135,7 +126,6 @@
           <p id="m-count-sub" class="mt-1 text-xs text-slate-500">Payment records</p>
         </div>
       </section>
-
       <!-- Control bar -->
       <section class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:p-4" aria-label="Filters">
         <div class="relative flex-1">
@@ -157,7 +147,6 @@
           </select>
         </div>
       </section>
-
       <!-- Table -->
       <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-label="Payment records">
         <div class="overflow-x-auto">
@@ -166,6 +155,7 @@
               <tr>
                 <th scope="col" class="px-5 py-3">Student</th>
                 <th scope="col" class="px-5 py-3">Batch</th>
+                <th scope="col" class="px-5 py-3">Fee Status</th>
                 <th scope="col" class="px-5 py-3 text-right">Amount Paid</th>
                 <th scope="col" class="px-5 py-3">Mode</th>
                 <th scope="col" class="px-5 py-3">Date</th>
@@ -176,7 +166,6 @@
             <tbody id="fees-body" class="divide-y divide-slate-100 bg-white"></tbody>
           </table>
         </div>
-
         <!-- Empty / error state -->
         <div id="state-box" class="hidden flex-col items-center justify-center px-6 py-16 text-center">
           <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-400">
@@ -186,7 +175,6 @@
           <p id="state-text" class="mt-1 max-w-sm text-sm text-slate-500"></p>
           <button type="button" id="state-action" class="mt-4 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"></button>
         </div>
-
         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3 text-xs text-slate-500">
           <p id="result-count" aria-live="polite">&nbsp;</p>
           <p id="result-total"></p>
@@ -194,35 +182,31 @@
       </section>
     </main>
   </div>
-
-  <!-- Record payment slide-over -->
+  <!-- Record / Edit payment slide-over -->
   <div id="panel-backdrop" class="fixed inset-0 z-40 hidden bg-slate-900/40"></div>
   <aside id="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title"
     class="fixed inset-y-0 right-0 z-50 flex w-full max-w-md translate-x-full flex-col border-l border-slate-200 bg-white shadow-xl transition-transform duration-200">
     <div class="flex items-start justify-between border-b border-slate-200 px-6 py-4">
       <div>
         <h2 id="panel-title" class="text-base font-semibold text-slate-900">Record Payment</h2>
-        <p class="mt-0.5 text-sm text-slate-500">Log a fee payment received from a student.</p>
+        <p id="panel-subtitle" class="mt-0.5 text-sm text-slate-500">Log a fee payment received from a student.</p>
       </div>
       <button type="button" id="panel-close" class="-mr-2 rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900" aria-label="Close panel">
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
-
     <form id="payment-form" class="flex min-h-0 flex-1 flex-col" novalidate>
       <div class="flex-1 space-y-4 overflow-y-auto px-6 py-5">
         <div id="form-error" role="alert" class="hidden items-start gap-2.5 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800">
           <svg class="mt-0.5 h-4 w-4 shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
           <p id="form-error-text" class="flex-1 leading-5"></p>
         </div>
-
         <div>
           <label for="f-student" class="mb-1.5 block text-sm font-medium text-slate-700">Student <span class="text-red-600">*</span></label>
           <select id="f-student" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-50 disabled:text-slate-500">
             <option value="">Select a student</option>
           </select>
         </div>
-
         <!-- Student fee context -->
         <div id="student-hint" class="hidden rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
           <dl class="grid grid-cols-2 gap-x-4 gap-y-1.5">
@@ -232,9 +216,7 @@
             <dt class="text-slate-500">Balance this month</dt><dd id="h-balance" class="text-right font-medium text-slate-900"></dd>
             <dt class="text-slate-500">Current fee status</dt><dd id="h-status" class="text-right font-medium text-slate-900"></dd>
           </dl>
-          <p id="h-change" class="mt-2 hidden border-t border-slate-200 pt-2 text-slate-600"></p>
         </div>
-
         <div>
           <label for="f-amount" class="mb-1.5 block text-sm font-medium text-slate-700">Amount (₹) <span class="text-red-600">*</span></label>
           <div class="relative">
@@ -260,12 +242,20 @@
           </div>
         </div>
         <div>
+          <label for="f-status" class="mb-1.5 block text-sm font-medium text-slate-700">Update Student Fee Status</label>
+          <select id="f-status" class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-50 disabled:text-slate-500">
+            <option value="auto">Auto-calculate based on monthly fee</option>
+            <option value="Paid">Force mark as Paid</option>
+            <option value="Partial">Force mark as Partial</option>
+            <option value="Pending">Force mark as Pending</option>
+          </select>
+        </div>
+        <div>
           <label for="f-remarks" class="mb-1.5 block text-sm font-medium text-slate-700">Remarks <span class="font-normal text-slate-400">(optional)</span></label>
           <input id="f-remarks" type="text" maxlength="255" autocomplete="off" placeholder="e.g. October installment, receipt #1042"
             class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-50 disabled:text-slate-500" />
         </div>
       </div>
-
       <div class="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-4">
         <button type="button" id="panel-cancel" class="rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 disabled:cursor-not-allowed disabled:opacity-60">Cancel</button>
         <button type="submit" id="save-btn" class="inline-flex min-w-[96px] items-center justify-center gap-2 rounded-md bg-slate-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:opacity-80">
@@ -275,7 +265,6 @@
       </div>
     </form>
   </aside>
-
   <!-- Delete confirm dialog -->
   <div id="confirm" class="fixed inset-0 z-[55] hidden items-center justify-center p-4">
     <div id="confirm-backdrop" class="absolute inset-0 bg-slate-900/40"></div>
@@ -291,17 +280,14 @@
       </div>
     </div>
   </div>
-
   <!-- Toasts -->
   <div id="toasts" class="pointer-events-none fixed bottom-4 right-4 z-[70] flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0" aria-live="polite"></div>
-
   <script type="module">
     import { supabase, getUserProfile, logoutUser } from '../js/auth.js';
-
     /* ---------- Config ---------- */
     const REDIRECT_URL = '../index.html';
     const ALLOWED_ROLES = ['admin', 'teacher'];
-    const FEE_STATUSES = ['Pending', 'Partial', 'Paid'];            // ordered by progress
+    const FEE_STATUSES = ['Pending', 'Partial', 'Paid'];
     const FEE_COLUMNS = 'id, student_id, amount, payment_mode, payment_date, remarks, students(full_name, fee_status, batches(name, monthly_fee))';
     const STUDENT_COLUMNS = 'id, full_name, fee_status, batch_id, batches(name, monthly_fee)';
     const MODE_BADGE = {
@@ -310,7 +296,11 @@
       'Net Banking': 'border-sky-200 bg-sky-50 text-sky-700',
       'Cheque': 'border-amber-200 bg-amber-50 text-amber-700'
     };
-
+    const STATUS_BADGE = {
+      'Paid': 'border-emerald-200 bg-emerald-50 text-emerald-700',
+      'Partial': 'border-amber-200 bg-amber-50 text-amber-700',
+      'Pending': 'border-red-200 bg-red-50 text-red-700'
+    };
     /* ---------- State ---------- */
     let fees = [];
     let students = [];
@@ -318,8 +308,8 @@
     let loadError = null;
     let isLoading = true;
     let deleteTarget = null;
+    let editTarget = null;
     const filters = { q: '', mode: '' };
-
     /* ---------- Elements ---------- */
     const $ = (id) => document.getElementById(id);
     const overlay = $('auth-overlay');
@@ -332,27 +322,21 @@
     const form = $('payment-form');
     const formError = $('form-error');
     const saveBtn = $('save-btn');
-
     /* ---------- Helpers ---------- */
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
       { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
     ));
-
     const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 2 });
     const fmtINR = (n) => inr.format(Number(n) || 0);
-
     function normalizeStatus(s) {
       return FEE_STATUSES.find((x) => x.toLowerCase() === String(s ?? '').toLowerCase()) || 'Pending';
     }
-    const rank = (s) => FEE_STATUSES.indexOf(normalizeStatus(s));
-
     function pad(n) { return String(n).padStart(2, '0'); }
     function todayStr() {
       const d = new Date();
       return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
     }
     const currentMonthKey = () => todayStr().slice(0, 7);
-
     function fmtDate(value) {
       if (!value) return '—';
       const s = String(value);
@@ -361,7 +345,6 @@
       if (isNaN(d)) return '—';
       return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
     }
-
     function toast(message, type = 'success') {
       const el = document.createElement('div');
       const isErr = type === 'error';
@@ -374,27 +357,32 @@
       $('toasts').appendChild(el);
       setTimeout(() => el.remove(), 4500);
     }
-
     /* ---------- Fee calculations ---------- */
-    // Payments recorded per student during the current calendar month.
-    function paidThisMonthMap() {
+    function paidThisMonthMap(excludeFeeId = null) {
       const key = currentMonthKey();
       const map = new Map();
       for (const f of fees) {
+        if (excludeFeeId && String(f.id) === String(excludeFeeId)) continue;
         if (String(f.payment_date ?? '').slice(0, 7) !== key) continue;
         const id = String(f.student_id);
         map.set(id, (map.get(id) || 0) + (Number(f.amount) || 0));
       }
       return map;
     }
-
     const monthlyFeeOf = (s) => Number(s?.batches?.monthly_fee) || 0;
-
+    function computeAutoStatus(student, newAmount = 0, dateStr = todayStr(), excludeFeeId = null) {
+      const fee = monthlyFeeOf(student);
+      const isThisMonth = String(dateStr ?? '').slice(0, 7) === currentMonthKey();
+      const alreadyPaid = paidThisMonthMap(excludeFeeId).get(String(student.id)) || 0;
+      const totalPaid = alreadyPaid + (isThisMonth ? Number(newAmount) : 0);
+      if (totalPaid <= 0) return 'Pending';
+      if (fee > 0 && totalPaid < fee) return 'Partial';
+      return 'Paid';
+    }
     function computeMetrics() {
       const totalCollected = fees.reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
       let pendingDues = null;
       let studentsWithDues = 0;
-
       if (studentsLoaded) {
         pendingDues = 0;
         const paid = paidThisMonthMap();
@@ -402,13 +390,12 @@
           const status = normalizeStatus(s.fee_status);
           if (status === 'Paid') continue;
           const fee = monthlyFeeOf(s);
-          const due = status === 'Pending' ? fee : Math.max(fee - (paid.get(String(s.id)) || 0), 0);
+          const due = Math.max(fee - (paid.get(String(s.id)) || 0), 0);
           if (due > 0) { pendingDues += due; studentsWithDues += 1; }
         }
       }
       return { totalCollected, pendingDues, studentsWithDues };
     }
-
     function renderMetrics() {
       if (isLoading || loadError) {
         $('m-collected').textContent = '—';
@@ -419,7 +406,6 @@
       const m = computeMetrics();
       $('m-collected').textContent = fmtINR(m.totalCollected);
       $('m-count').textContent = fees.length.toLocaleString('en-IN');
-
       if (m.pendingDues === null) {
         $('m-pending').textContent = '—';
         $('m-pending-sub').textContent = 'Could not load student data';
@@ -427,22 +413,10 @@
         $('m-pending').textContent = fmtINR(m.pendingDues);
         $('m-pending-sub').textContent = m.studentsWithDues + ' student' + (m.studentsWithDues === 1 ? '' : 's') + ' with dues';
       }
-
       const key = currentMonthKey();
       const monthCount = fees.filter((f) => String(f.payment_date ?? '').slice(0, 7) === key).length;
       $('m-count-sub').textContent = monthCount + ' this month';
     }
-
-    // Returns the status a payment should upgrade the student to, or null if no change is needed.
-    function nextStatusFor(student, amount, dateStr) {
-      const fee = monthlyFeeOf(student);
-      if (!fee || !(amount > 0)) return null;
-      if (String(dateStr ?? '').slice(0, 7) !== currentMonthKey()) return null;
-      const paid = (paidThisMonthMap().get(String(student.id)) || 0) + amount;
-      const computed = paid >= fee ? 'Paid' : 'Partial';
-      return rank(computed) > rank(student.fee_status) ? computed : null;
-    }
-
     /* ---------- Sidebar (mobile) ---------- */
     const sidebar = $('sidebar');
     const navBackdrop = $('nav-backdrop');
@@ -450,20 +424,18 @@
     const closeNav = () => { sidebar.classList.add('-translate-x-full'); navBackdrop.classList.add('hidden'); };
     $('menu-btn').addEventListener('click', openNav);
     navBackdrop.addEventListener('click', closeNav);
-
     /* ---------- Table rendering ---------- */
     function skeletonRows() {
       const bar = (w) => '<div class="h-3.5 animate-pulse rounded bg-slate-100 ' + w + '"></div>';
       let html = '';
       for (let i = 0; i < 6; i++) {
         html += '<tr><td class="px-5 py-4">' + bar('w-36') + '</td><td class="px-5 py-4">' + bar('w-28') +
-          '</td><td class="px-5 py-4">' + bar('ml-auto w-20') + '</td><td class="px-5 py-4">' + bar('w-16') +
+          '</td><td class="px-5 py-4">' + bar('w-16') + '</td><td class="px-5 py-4">' + bar('ml-auto w-20') + '</td><td class="px-5 py-4">' + bar('w-16') +
           '</td><td class="px-5 py-4">' + bar('w-20') + '</td><td class="px-5 py-4">' + bar('w-32') +
-          '</td><td class="px-5 py-4">' + bar('ml-auto w-8') + '</td></tr>';
+          '</td><td class="px-5 py-4">' + bar('ml-auto w-12') + '</td></tr>';
       }
       return html;
     }
-
     function getFiltered() {
       const q = filters.q.trim().toLowerCase();
       return fees.filter((f) => {
@@ -475,7 +447,6 @@
         return true;
       });
     }
-
     function showState({ title, text, action, onAction }) {
       $('state-title').textContent = title;
       $('state-text').textContent = text;
@@ -494,16 +465,13 @@
       stateBox.classList.add('hidden');
       stateBox.classList.remove('flex');
     }
-
     function clearFilters() {
       filters.q = ''; filters.mode = '';
       searchInput.value = ''; filterMode.value = '';
       render();
     }
-
     function render() {
       renderMetrics();
-
       if (isLoading) {
         tbody.innerHTML = skeletonRows();
         hideState();
@@ -511,7 +479,6 @@
         $('result-total').textContent = '';
         return;
       }
-
       if (loadError) {
         tbody.innerHTML = '';
         showState({ title: 'Could not load payments', text: loadError, action: 'Try again', onAction: loadData });
@@ -519,11 +486,9 @@
         $('result-total').textContent = '';
         return;
       }
-
       const list = getFiltered();
       $('result-count').textContent = 'Showing ' + list.length + ' of ' + fees.length + ' record' + (fees.length === 1 ? '' : 's');
       $('result-total').textContent = list.length ? 'Total shown: ' + fmtINR(list.reduce((s, f) => s + (Number(f.amount) || 0), 0)) : '';
-
       if (!list.length) {
         tbody.innerHTML = '';
         if (filters.q || filters.mode) {
@@ -543,11 +508,13 @@
         }
         return;
       }
-
       hideState();
       tbody.innerHTML = list.map((f) => {
-        const name = f.students?.full_name || 'Deleted student';
-        const batch = f.students?.batches?.name;
+        const stuObj = students.find((s) => String(s.id) === String(f.student_id)) || f.students;
+        const name = stuObj?.full_name || 'Deleted student';
+        const batch = stuObj?.batches?.name;
+        const stStatus = normalizeStatus(stuObj?.fee_status);
+        const stBadge = STATUS_BADGE[stStatus] || STATUS_BADGE['Pending'];
         const mode = f.payment_mode || '—';
         const badge = MODE_BADGE[mode] || 'border-slate-200 bg-slate-50 text-slate-600';
         return '<tr data-id="' + esc(f.id) + '" class="hover:bg-slate-50/60">' +
@@ -555,17 +522,20 @@
             '<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">' + esc(name.trim().charAt(0).toUpperCase()) + '</div>' +
             '<span class="font-medium text-slate-900">' + esc(name) + '</span></div></td>' +
           '<td class="whitespace-nowrap px-5 py-3.5 text-slate-600">' + (batch ? esc(batch) : '<span class="text-slate-400">Unassigned</span>') + '</td>' +
-          '<td class="whitespace-nowrap px-5 py-3.5 text-right font-medium tabular-nums text-slate-900">' + fmtINR(f.amount) + '</td>' +
+          '<td class="whitespace-nowrap px-5 py-3.5"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ' + stBadge + '">' + esc(stStatus) + '</span></td>' +
+          '<td class="whitespace-nowrap px-5 py-3.5 text-right font-semibold tabular-nums text-slate-900">' + fmtINR(f.amount) + '</td>' +
           '<td class="whitespace-nowrap px-5 py-3.5"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ' + badge + '">' + esc(mode) + '</span></td>' +
           '<td class="whitespace-nowrap px-5 py-3.5 text-slate-600">' + fmtDate(f.payment_date) + '</td>' +
           '<td class="max-w-[220px] truncate px-5 py-3.5 text-slate-600" title="' + esc(f.remarks || '') + '">' + (f.remarks ? esc(f.remarks) : '<span class="text-slate-400">—</span>') + '</td>' +
-          '<td class="whitespace-nowrap px-5 py-3.5 text-right">' +
-            '<button type="button" data-delete aria-label="Delete payment by ' + esc(name) + '" class="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600">' +
-              '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>' +
+          '<td class="whitespace-nowrap px-5 py-3.5 text-right space-x-1">' +
+            '<button type="button" data-edit aria-label="Edit payment by ' + esc(name) + '" class="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none">' +
+              '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>' +
+            '</button>' +
+            '<button type="button" data-delete aria-label="Delete payment by ' + esc(name) + '" class="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none">' +
+              '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>' +
             '</button></td></tr>';
       }).join('');
     }
-
     /* ---------- Data ---------- */
     function populateStudentSelect() {
       const opts = students.map((s) => {
@@ -574,19 +544,16 @@
       }).join('');
       $('f-student').innerHTML = '<option value="">Select a student</option>' + opts;
     }
-
     async function loadData() {
       isLoading = true;
       loadError = null;
       render();
-
       const [feeRes, studentRes] = await Promise.all([
         supabase.from('fees').select(FEE_COLUMNS)
           .order('payment_date', { ascending: false })
           .order('id', { ascending: false }),
         supabase.from('students').select(STUDENT_COLUMNS).order('full_name', { ascending: true })
       ]);
-
       if (studentRes.error) {
         console.error('Students load failed:', studentRes.error);
         studentsLoaded = false;
@@ -597,7 +564,6 @@
         students = studentRes.data || [];
         populateStudentSelect();
       }
-
       if (feeRes.error) {
         console.error('Fees load failed:', feeRes.error);
         loadError = feeRes.error.message || 'Something went wrong while fetching payments.';
@@ -605,11 +571,9 @@
       } else {
         fees = feeRes.data || [];
       }
-
       isLoading = false;
       render();
     }
-
     /* ---------- Filters ---------- */
     let searchTimer;
     searchInput.addEventListener('input', () => {
@@ -617,22 +581,28 @@
       searchTimer = setTimeout(() => { filters.q = searchInput.value; render(); }, 150);
     });
     filterMode.addEventListener('change', () => { filters.mode = filterMode.value; render(); });
-
-    /* ---------- Delete ---------- */
+    /* ---------- Edit & Delete Table Actions ---------- */
     tbody.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-delete]');
-      if (!btn) return;
-      const row = btn.closest('tr');
-      const record = fees.find((f) => String(f.id) === row.dataset.id);
-      if (record) openConfirm(record);
+      const delBtn = e.target.closest('[data-delete]');
+      if (delBtn) {
+        const row = delBtn.closest('tr');
+        const record = fees.find((f) => String(f.id) === row.dataset.id);
+        if (record) openConfirm(record);
+        return;
+      }
+      const editBtn = e.target.closest('[data-edit]');
+      if (editBtn) {
+        const row = editBtn.closest('tr');
+        const record = fees.find((f) => String(f.id) === row.dataset.id);
+        if (record) openPanel(record);
+      }
     });
-
     const confirmEl = $('confirm');
     function openConfirm(record) {
       deleteTarget = record;
       const name = record.students?.full_name || 'this student';
       $('confirm-text').textContent = 'This will permanently remove the ' + fmtINR(record.amount) + ' payment from ' + name +
-        ' dated ' + fmtDate(record.payment_date) + '. The student\'s fee status will not be changed automatically.';
+        ' dated ' + fmtDate(record.payment_date) + ' and recalculate their fee status.';
       confirmEl.classList.remove('hidden');
       confirmEl.classList.add('flex');
       $('confirm-cancel').focus();
@@ -650,29 +620,29 @@
       okBtn.disabled = true;
       $('confirm-cancel').disabled = true;
       $('confirm-spinner').classList.remove('hidden');
-
       const target = deleteTarget;
       const { error } = await supabase.from('fees').delete().eq('id', target.id);
-
       okBtn.disabled = false;
       $('confirm-cancel').disabled = false;
       $('confirm-spinner').classList.add('hidden');
-
       if (error) {
         console.error('Delete failed:', error);
         toast('Could not delete record: ' + error.message, 'error');
         return;
       }
-
       fees = fees.filter((f) => f.id !== target.id);
+      const stu = students.find((s) => String(s.id) === String(target.student_id));
+      if (stu) {
+        const recalcStatus = computeAutoStatus(stu, 0, todayStr());
+        const { error: stErr } = await supabase.from('students').update({ fee_status: recalcStatus }).eq('id', stu.id);
+        if (!stErr) stu.fee_status = recalcStatus;
+      }
       closeConfirm();
       render();
-      toast('Payment record deleted.');
+      toast('Payment record deleted and status updated.');
     });
-
-    /* ---------- Record payment slide-over ---------- */
-    const formFields = ['f-student', 'f-amount', 'f-mode', 'f-date', 'f-remarks'].map($);
-
+    /* ---------- Record / Edit payment slide-over ---------- */
+    const formFields = ['f-student', 'f-amount', 'f-mode', 'f-date', 'f-status', 'f-remarks'].map($);
     function setSaving(saving) {
       formFields.forEach((f) => { f.disabled = saving; });
       saveBtn.disabled = saving;
@@ -680,7 +650,6 @@
       $('save-spinner').classList.toggle('hidden', !saving);
       $('save-label').textContent = saving ? 'Saving…' : 'Save';
     }
-
     function showFormError(msg) {
       $('form-error-text').textContent = msg;
       formError.classList.remove('hidden');
@@ -690,84 +659,84 @@
       formError.classList.add('hidden');
       formError.classList.remove('flex');
     }
-
     function selectedStudent() {
       const id = $('f-student').value;
       return id ? students.find((s) => String(s.id) === id) : null;
     }
-
     function updateHint() {
       const hint = $('student-hint');
       const s = selectedStudent();
       if (!s) { hint.classList.add('hidden'); return; }
-
       const fee = monthlyFeeOf(s);
-      const paid = paidThisMonthMap().get(String(s.id)) || 0;
+      const paid = paidThisMonthMap(editTarget?.id).get(String(s.id)) || 0;
+      const entered = Number($('f-amount').value) || 0;
       $('h-batch').textContent = s.batches?.name || 'Unassigned';
       $('h-fee').textContent = fee ? fmtINR(fee) : '—';
-      $('h-paid').textContent = fmtINR(paid);
-      $('h-balance').textContent = fee ? fmtINR(Math.max(fee - paid, 0)) : '—';
+      $('h-paid').textContent = fmtINR(paid + entered);
+      $('h-balance').textContent = fee ? fmtINR(Math.max(fee - (paid + entered), 0)) : '—';
       $('h-status').textContent = normalizeStatus(s.fee_status);
-
-      const amount = Number($('f-amount').value);
-      const next = nextStatusFor(s, amount, $('f-date').value);
-      const note = $('h-change');
-      if (next) {
-        note.textContent = 'Saving will update fee status from ' + normalizeStatus(s.fee_status) + ' to ' + next + '.';
-        note.classList.remove('hidden');
-      } else {
-        note.classList.add('hidden');
-      }
       hint.classList.remove('hidden');
     }
-
     $('f-student').addEventListener('change', updateHint);
     $('f-amount').addEventListener('input', updateHint);
     $('f-date').addEventListener('change', updateHint);
-
-    function openPanel() {
+    function openPanel(recordToEdit = null) {
+      editTarget = recordToEdit;
       form.reset();
       hideFormError();
       setSaving(false);
-      $('f-mode').value = 'UPI';
-      $('f-date').value = todayStr();
       $('f-date').max = todayStr();
-      $('student-hint').classList.add('hidden');
+      if (recordToEdit) {
+        $('panel-title').textContent = 'Edit Payment';
+        $('panel-subtitle').textContent = 'Update transaction details or adjust fee status.';
+        $('f-student').value = String(recordToEdit.student_id);
+        $('f-amount').value = recordToEdit.amount;
+        $('f-mode').value = recordToEdit.payment_mode || 'UPI';
+        $('f-date').value = String(recordToEdit.payment_date || todayStr()).slice(0, 10);
+        $('f-remarks').value = recordToEdit.remarks || '';
+        const stu = selectedStudent();
+        $('f-status').value = stu ? normalizeStatus(stu.fee_status) : 'auto';
+        updateHint();
+      } else {
+        $('panel-title').textContent = 'Record Payment';
+        $('panel-subtitle').textContent = 'Log a fee payment received from a student.';
+        $('f-mode').value = 'UPI';
+        $('f-date').value = todayStr();
+        $('f-status').value = 'auto';
+        $('student-hint').classList.add('hidden');
+      }
       panelBackdrop.classList.remove('hidden');
       panel.classList.remove('translate-x-full');
       document.body.classList.add('overflow-hidden');
-      setTimeout(() => $('f-student').focus(), 150);
+      setTimeout(() => (recordToEdit ? $('f-amount') : $('f-student')).focus(), 150);
     }
     function closePanel() {
       if (saveBtn.disabled) return;
+      editTarget = null;
       panel.classList.add('translate-x-full');
       panelBackdrop.classList.add('hidden');
       document.body.classList.remove('overflow-hidden');
     }
-
-    $('record-btn').addEventListener('click', openPanel);
+    $('record-btn').addEventListener('click', () => openPanel(null));
     $('panel-close').addEventListener('click', closePanel);
     $('panel-cancel').addEventListener('click', closePanel);
     panelBackdrop.addEventListener('click', closePanel);
-
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
       if (!confirmEl.classList.contains('hidden')) { if (!$('confirm-ok').disabled) closeConfirm(); return; }
       if (!panelBackdrop.classList.contains('hidden')) { closePanel(); return; }
       closeNav();
     });
-
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       hideFormError();
-
       const student = selectedStudent();
       const amountRaw = $('f-amount').value.trim();
       const amount = Number(amountRaw);
       const payment_mode = $('f-mode').value;
       const payment_date = $('f-date').value || todayStr();
+      const statusChoice = $('f-status').value;
       const remarks = $('f-remarks').value.trim();
-
       if (!student) { showFormError('Please select a student.'); $('f-student').focus(); return; }
       if (amountRaw === '' || isNaN(amount) || amount <= 0) {
         showFormError('Enter a valid amount greater than zero.'); $('f-amount').focus(); return;
@@ -775,52 +744,53 @@
       if (payment_date > todayStr()) {
         showFormError('Payment date cannot be in the future.'); $('f-date').focus(); return;
       }
-
-      // Work out the status change before the new payment is added to local state.
-      const nextStatus = nextStatusFor(student, amount, payment_date);
-
+      const targetStatus = statusChoice === 'auto'
+        ? computeAutoStatus(student, amount, payment_date, editTarget?.id)
+        : statusChoice;
       setSaving(true);
-
-      const { data, error } = await supabase
-        .from('fees')
-        .insert({ student_id: student.id, amount, payment_mode, payment_date, remarks: remarks || null })
-        .select(FEE_COLUMNS)
-        .single();
-
-      if (error) {
-        console.error('Record payment failed:', error);
+      let res;
+      if (editTarget) {
+        res = await supabase
+          .from('fees')
+          .update({ student_id: student.id, amount, payment_mode, payment_date, remarks: remarks || null })
+          .eq('id', editTarget.id)
+          .select(FEE_COLUMNS)
+          .single();
+      } else {
+        res = await supabase
+          .from('fees')
+          .insert({ student_id: student.id, amount, payment_mode, payment_date, remarks: remarks || null })
+          .select(FEE_COLUMNS)
+          .single();
+      }
+      if (res.error) {
+        console.error('Save payment failed:', res.error);
         setSaving(false);
-        showFormError(error.message || 'Could not record the payment. Please try again.');
+        showFormError(res.error.message || 'Could not save the payment. Please try again.');
         return;
       }
-
-      fees.unshift(data);
-      let statusWarning = false;
-
-      if (nextStatus) {
-        const { error: updateError } = await supabase
-          .from('students').update({ fee_status: nextStatus }).eq('id', student.id);
-        if (updateError) {
-          console.error('Fee status update failed:', updateError);
-          statusWarning = true;
-        } else {
-          student.fee_status = nextStatus;
-        }
+      if (editTarget) {
+        fees = fees.map((f) => (f.id === editTarget.id ? res.data : f));
+      } else {
+        fees.unshift(res.data);
       }
-
+      const { error: updateError } = await supabase
+        .from('students')
+        .update({ fee_status: targetStatus })
+        .eq('id', student.id);
+      if (!updateError) {
+        student.fee_status = targetStatus;
+        if (res.data.students) res.data.students.fee_status = targetStatus;
+      }
       setSaving(false);
       closePanel();
       render();
-
-      if (statusWarning) {
-        toast('Payment recorded, but the student\'s fee status could not be updated.', 'error');
-      } else if (nextStatus) {
-        toast(fmtINR(amount) + ' recorded. Fee status updated to ' + nextStatus + '.');
+      if (updateError) {
+        toast('Payment saved, but student fee status could not be updated.', 'error');
       } else {
-        toast(fmtINR(amount) + ' payment recorded.');
+        toast(fmtINR(amount) + ' saved. Status is ' + targetStatus + '.');
       }
     });
-
     /* ---------- Sign out ---------- */
     $('signout-btn').addEventListener('click', async () => {
       $('signout-btn').disabled = true;
@@ -835,18 +805,15 @@
         window.location.replace(REDIRECT_URL);
       }
     });
-
     /* ---------- Init ---------- */
     async function init() {
       try {
         const profile = await getUserProfile();
         const role = String(profile?.role ?? '').toLowerCase();
-
         if (!profile || !ALLOWED_ROLES.includes(role)) {
           window.location.replace(REDIRECT_URL);
           return;
         }
-
         const name = profile.full_name || profile.name || profile.email || 'User';
         $('sidebar-name').textContent = name;
         $('sidebar-role').textContent = role;
@@ -857,9 +824,7 @@
         window.location.replace(REDIRECT_URL);
         return;
       }
-
       await loadData();
-
       const params = new URLSearchParams(window.location.search);
       if (params.get('action') === 'record') {
         openPanel();
@@ -868,7 +833,6 @@
         history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
       }
     }
-
     init();
   </script>
 </body>

@@ -26,7 +26,6 @@
   </style>
 </head>
 <body class="h-full bg-slate-50 font-sans text-slate-900">
-
   <!-- ===================== LOGIN VIEW ===================== -->
   <div id="loginView" class="min-h-full flex items-center justify-center px-4 py-12">
     <div class="w-full max-w-sm">
@@ -39,7 +38,6 @@
         <h1 class="mt-4 text-xl font-semibold tracking-tight">Parent Portal</h1>
         <p class="mt-1 text-sm text-slate-500">Track your ward's progress, attendance, and fees.</p>
       </div>
-
       <form id="loginForm" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" novalidate>
         <div class="space-y-4">
           <div>
@@ -47,28 +45,23 @@
             <input id="admNo" type="text" autocomplete="off" autocapitalize="characters" required placeholder="e.g. ADM-001"
               class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm uppercase text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
           </div>
-
           <div>
             <label for="contactNo" class="mb-1.5 block text-sm font-medium text-slate-700">Registered Phone or PIN</label>
             <input id="contactNo" type="password" required placeholder="Phone number or PIN"
               class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900" />
           </div>
-
           <div id="loginError" class="hidden rounded-md border border-red-200 bg-red-50 p-2.5 text-xs text-red-700"></div>
-
           <button type="submit" id="loginBtn"
             class="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60">
             <span>Access Ward Details</span>
           </button>
         </div>
-
         <div class="mt-4 text-center">
-          <a href="../index.html" class="text-xs text-slate-500 hover:text-slate-800 hover:underline">Are you a staff member? Sign in here</a>
+          <a href="../index.html" class="text-xs text-slate-500 hover:text-slate-800 hover:underline">&larr; Back to Home Portal</a>
         </div>
       </form>
     </div>
   </div>
-
   <!-- ===================== DASHBOARD VIEW ===================== -->
   <div id="dashView" class="hidden min-h-full flex-col">
     <!-- Top Navigation -->
@@ -83,16 +76,13 @@
             <p id="studentBatch" class="text-xs text-slate-500">Batch · ADM-000</p>
           </div>
         </div>
-
         <button id="logoutBtn" type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
           Sign Out
         </button>
       </div>
     </header>
-
     <!-- Main Content -->
     <main class="mx-auto max-w-5xl flex-1 space-y-6 px-4 py-6 sm:px-6">
-
       <!-- Metrics Overview -->
       <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <!-- Attendance Rate -->
@@ -106,7 +96,6 @@
             <div id="metricAttBar" class="h-full rounded-full bg-emerald-500" style="width: 0%"></div>
           </div>
         </div>
-
         <!-- Academic Average -->
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Average Exam Score</p>
@@ -118,15 +107,39 @@
             <div id="metricExamBar" class="h-full rounded-full bg-indigo-500" style="width: 0%"></div>
           </div>
         </div>
-
         <!-- Fee Status -->
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Fee Clearance</p>
           <div class="mt-2 flex items-center justify-between">
             <span id="metricFeeStatus" class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium border border-slate-200 bg-slate-50">Pending</span>
-            <span id="metricMonthlyFee" class="text-sm font-semibold text-slate-900">₹0 / mo</span>
+            <span id="metricTotalPaid" class="tabular text-lg font-bold text-slate-900">Paid: ₹0</span>
           </div>
-          <p class="mt-3 text-xs text-slate-500">Check with front desk for receipt duplicates.</p>
+          <p id="metricMonthlyFee" class="mt-2 text-xs text-slate-500">Batch Fee: ₹0 / mo</p>
+        </div>
+      </section>
+
+      <!-- Fee Payment History -->
+      <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="border-b border-slate-200 px-5 py-4">
+          <h3 class="text-sm font-semibold text-slate-900">Fee Payment History</h3>
+          <p class="mt-0.5 text-xs text-slate-500">Recorded fee transactions and receipts for your ward.</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+              <tr>
+                <th class="px-5 py-3">Date</th>
+                <th class="px-4 py-3">Amount Paid</th>
+                <th class="px-4 py-3">Payment Mode</th>
+                <th class="px-5 py-3">Remarks / Receipt</th>
+              </tr>
+            </thead>
+            <tbody id="feeTableBody" class="divide-y divide-slate-100 bg-white">
+              <tr>
+                <td colspan="4" class="px-5 py-6 text-center text-xs text-slate-500">No payment records found.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -180,23 +193,21 @@
           </table>
         </div>
       </section>
-
     </main>
   </div>
-
   <script type="module">
     import { supabase } from '../js/auth.js';
-
     const PARENT_SESSION_KEY = 'cc_parent_student';
-
     const loginView = document.getElementById('loginView');
     const dashView = document.getElementById('dashView');
     const loginForm = document.getElementById('loginForm');
     const loginError = document.getElementById('loginError');
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
-
     let currentStudent = null;
+
+    const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    const fmtINR = (n) => inr.format(Number(n) || 0);
 
     function showError(msg) {
       if (!msg) {
@@ -211,40 +222,30 @@
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       showError('');
-
       const admNo = document.getElementById('admNo').value.trim().toUpperCase();
       const contactNo = document.getElementById('contactNo').value.trim();
-
       if (!admNo || !contactNo) {
         showError('Please enter both the Admission Number and registered phone/PIN.');
         return;
       }
-
       loginBtn.disabled = true;
       loginBtn.textContent = 'Verifying...';
-
       try {
-        // Query student matching admission_no and (phone or pin)
         const { data, error } = await supabase
           .from('students')
           .select('*, batches(name, monthly_fee)')
           .eq('admission_no', admNo)
           .maybeSingle();
-
         if (error) throw error;
-
-        // Verify either phone ends with entered value or matches PIN
         const phoneMatch = data?.phone && data.phone.replace(/\D/g, '').endsWith(contactNo.replace(/\D/g, ''));
         const pinMatch = data?.pin === contactNo;
-
         if (!data || (!phoneMatch && !pinMatch)) {
           showError('Invalid Admission Number or contact verification details.');
           return;
         }
-
         currentStudent = data;
         localStorage.setItem(PARENT_SESSION_KEY, JSON.stringify(data));
-        renderDashboard();
+        await renderDashboard();
       } catch (err) {
         showError(err.message || 'Unable to connect. Please try again.');
       } finally {
@@ -265,10 +266,22 @@
 
     async function renderDashboard() {
       if (!currentStudent) return;
-
       loginView.classList.add('hidden');
       dashView.classList.remove('hidden');
       dashView.classList.add('flex');
+
+      // Always fetch fresh student data, fees, attendance, and marks from Supabase
+      const [stuRes, feeRes, attRes, marksRes] = await Promise.all([
+        supabase.from('students').select('*, batches(name, monthly_fee)').eq('id', currentStudent.id).maybeSingle(),
+        supabase.from('fees').select('*').eq('student_id', currentStudent.id).order('payment_date', { ascending: false }).order('id', { ascending: false }),
+        supabase.from('attendance').select('*').eq('student_id', currentStudent.id).order('date', { ascending: false }).limit(30),
+        supabase.from('marks').select('*, exams!inner(title, exam_date, max_marks, status)').eq('student_id', currentStudent.id).ilike('exams.status', 'published')
+      ]);
+
+      if (stuRes.data) {
+        currentStudent = stuRes.data;
+        localStorage.setItem(PARENT_SESSION_KEY, JSON.stringify(currentStudent));
+      }
 
       // Populate Header
       document.getElementById('studentName').textContent = currentStudent.full_name;
@@ -276,7 +289,11 @@
       const batchName = currentStudent.batches?.name || 'Unassigned Batch';
       document.getElementById('studentBatch').textContent = `${batchName} · ${currentStudent.admission_no}`;
 
-      // Fee Card
+      // Calculate & Populate Fees
+      const feeList = feeRes.data || [];
+      const totalPaid = feeList.reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+      const monthlyFee = Number(currentStudent.batches?.monthly_fee || 0);
+
       const feeStatus = String(currentStudent.fee_status || 'Pending');
       const feeBadge = document.getElementById('metricFeeStatus');
       feeBadge.textContent = feeStatus;
@@ -287,20 +304,35 @@
       } else {
         feeBadge.className = 'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-200 bg-red-50 text-red-700';
       }
-      document.getElementById('metricMonthlyFee').textContent = `₹${Number(currentStudent.batches?.monthly_fee || 0).toLocaleString('en-IN')} / mo`;
 
-      // Fetch Attendance & Marks concurrently
-      const [attRes, marksRes] = await Promise.all([
-        supabase.from('attendance').select('*').eq('student_id', currentStudent.id).order('date', { ascending: false }).limit(30),
-        supabase.from('marks').select('*, exams!inner(title, exam_date, max_marks, status)').eq('student_id', currentStudent.id).ilike('exams.status', 'published')
-      ]);
+      document.getElementById('metricTotalPaid').textContent = `Paid: ${fmtINR(totalPaid)}`;
+      document.getElementById('metricMonthlyFee').textContent = monthlyFee > 0
+        ? `Batch Fee: ${fmtINR(monthlyFee)} / mo`
+        : `Total recorded across ${feeList.length} payment${feeList.length === 1 ? '' : 's'}`;
+
+      const feeBody = document.getElementById('feeTableBody');
+      if (feeList.length > 0) {
+        feeBody.innerHTML = feeList.map(f => {
+          const pDate = f.payment_date ? new Date(f.payment_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+          return `
+            <tr>
+              <td class="whitespace-nowrap px-5 py-3 font-medium text-slate-900">${pDate}</td>
+              <td class="whitespace-nowrap px-4 py-3 font-semibold text-emerald-700 tabular">${fmtINR(f.amount)}</td>
+              <td class="whitespace-nowrap px-4 py-3">
+                <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-700">${f.payment_mode || 'Cash'}</span>
+              </td>
+              <td class="px-5 py-3 text-xs text-slate-600">${f.remarks || 'Fee installment received'}</td>
+            </tr>`;
+        }).join('');
+      } else {
+        feeBody.innerHTML = `<tr><td colspan="4" class="px-5 py-6 text-center text-xs text-slate-500">No payment records found.</td></tr>`;
+      }
 
       // Calculate Attendance Metrics
       const attList = attRes.data || [];
       const presentCount = attList.filter(a => String(a.status).toLowerCase() === 'present').length;
       const totalAttCount = attList.filter(a => ['present', 'absent'].includes(String(a.status).toLowerCase())).length;
       const attRate = totalAttCount > 0 ? Math.round((presentCount / totalAttCount) * 100) : 0;
-
       document.getElementById('metricAttRate').textContent = `${attRate}%`;
       document.getElementById('metricAttCount').textContent = `${presentCount} / ${totalAttCount} classes`;
       document.getElementById('metricAttBar').style.width = `${attRate}%`;
@@ -313,10 +345,8 @@
           let pill = '<span class="inline-flex rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">Absent</span>';
           if (st === 'present') pill = '<span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Present</span>';
           if (st === 'excused') pill = '<span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Excused</span>';
-
           const formattedDate = a.date ? new Date(a.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
           const timeMarked = a.marked_at ? new Date(a.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—';
-
           return `
             <tr>
               <td class="whitespace-nowrap px-5 py-3 font-medium text-slate-900">${formattedDate}</td>
@@ -331,7 +361,6 @@
       const marksList = marksRes.data || [];
       let totalPct = 0;
       let validExamCount = 0;
-
       const examBody = document.getElementById('examTableBody');
       if (marksList.length > 0) {
         examBody.innerHTML = marksList.map(m => {
@@ -340,13 +369,10 @@
           const pct = Math.round((scored / max) * 100);
           totalPct += pct;
           validExamCount++;
-
           const examDate = m.exams?.exam_date ? new Date(m.exams.exam_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
-
           let pillClass = 'border-emerald-200 bg-emerald-50 text-emerald-700';
           if (pct < 40) pillClass = 'border-red-200 bg-red-50 text-red-700';
           else if (pct < 60) pillClass = 'border-amber-200 bg-amber-50 text-amber-700';
-
           return `
             <tr>
               <td class="whitespace-nowrap px-5 py-3 font-medium text-slate-900">${m.exams?.title || 'Exam'}</td>
@@ -359,14 +385,12 @@
             </tr>`;
         }).join('');
       }
-
       const avgScore = validExamCount > 0 ? Math.round(totalPct / validExamCount) : 0;
       document.getElementById('metricExamAvg').textContent = `${avgScore}%`;
       document.getElementById('metricExamCount').textContent = `Across ${validExamCount} exam${validExamCount === 1 ? '' : 's'}`;
       document.getElementById('metricExamBar').style.width = `${avgScore}%`;
     }
 
-    // Auto-login if session exists
     (function init() {
       const saved = localStorage.getItem(PARENT_SESSION_KEY);
       if (saved) {
