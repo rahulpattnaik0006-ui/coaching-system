@@ -1,188 +1,244 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Teacher Portal · Coaching Management</title>
+  <title>Teacher Portal · Coaching Centre</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased">
-  
-  <!-- Session Loading Overlay -->
-  <div id="auth-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-50">
-    <div class="flex items-center gap-2 text-sm text-slate-500">
-      <svg class="h-4 w-4 animate-spin text-slate-900" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-      </svg>
-      Verifying teacher account…
+<body class="min-h-full bg-slate-50 font-sans text-slate-900 antialiased">
+
+  <!-- ===================== LOGIN VIEW (Username + PIN) ===================== -->
+  <div id="loginView" class="flex min-h-screen items-center justify-center px-4 py-12">
+    <div class="w-full max-w-sm">
+      <div class="mb-6 flex flex-col items-center text-center">
+        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-600 text-white shadow-sm">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+          </svg>
+        </div>
+        <h1 class="mt-4 text-xl font-semibold tracking-tight text-slate-900">Teacher Portal</h1>
+        <p class="mt-1 text-sm text-slate-500">Sign in with your Username and PIN set by Admin.</p>
+      </div>
+
+      <form id="loginForm" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" novalidate>
+        <div class="space-y-4">
+          <div>
+            <label for="tUsername" class="mb-1.5 block text-sm font-medium text-slate-700">Teacher Username</label>
+            <input id="tUsername" type="text" autocomplete="off" required placeholder="e.g. TCH-001 or rahul_sir"
+              class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600" />
+          </div>
+          <div>
+            <label for="tPin" class="mb-1.5 block text-sm font-medium text-slate-700">Login PIN</label>
+            <input id="tPin" type="password" inputmode="numeric" required placeholder="Enter 4-6 digit PIN"
+              class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600" />
+          </div>
+
+          <div id="loginError" class="hidden rounded-md border border-red-200 bg-red-50 p-2.5 text-xs text-red-700"></div>
+
+          <button type="submit" id="loginBtn"
+            class="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-purple-600 py-2.5 text-sm font-medium text-white transition hover:bg-purple-700 disabled:opacity-60">
+            <span>Sign In to Teacher Portal</span>
+          </button>
+        </div>
+        <div class="mt-4 text-center">
+          <a href="../index.html" class="text-xs text-slate-500 hover:text-slate-800 hover:underline">&larr; Back to Home Portal</a>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- Header -->
-  <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-    <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-      <div class="flex items-center gap-3">
-        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-600 text-white font-bold">
-          <span id="teacher-avatar">T</span>
-        </div>
-        <div>
-          <h1 id="teacher-name" class="text-sm font-semibold text-slate-900">Teacher Dashboard</h1>
-          <p class="text-xs text-slate-500">Instructor Portal</p>
-        </div>
-      </div>
-      <button id="logout-btn" class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none">
-        Sign Out
-      </button>
-    </div>
-  </header>
-
-  <!-- Navigation Tabs -->
-  <main class="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
-    <div class="flex space-x-2 border-b border-slate-200 pb-3">
-      <button id="tab-attendance-btn" class="tab-btn rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white">
-        Mark Attendance
-      </button>
-      <button id="tab-code-btn" class="tab-btn rounded-lg bg-white border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-        Generate Daily Code
-      </button>
-      <button id="tab-marks-btn" class="tab-btn rounded-lg bg-white border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-        Enter Marks
-      </button>
-    </div>
-
-    <!-- Alert / Toast -->
-    <div id="toast" class="hidden rounded-lg p-3 text-xs font-medium border" role="alert"></div>
-
-    <!-- SECTION 1: ATTENDANCE REGISTER -->
-    <section id="section-attendance" class="space-y-4">
-      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Select Batch</label>
-            <select id="att-batch" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none">
-              <option value="">Select Batch</option>
-            </select>
+  <!-- ===================== DASHBOARD VIEW ===================== -->
+  <div id="dashView" class="hidden min-h-screen flex-col">
+    <!-- Header -->
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-600 text-white font-bold">
+            <span id="teacher-avatar">T</span>
           </div>
           <div>
-            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Date</label>
-            <input type="date" id="att-date" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none" />
-          </div>
-          <div class="flex items-end">
-            <button id="load-students-btn" class="w-full rounded-md bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-800">
-              Load Class Roster
-            </button>
+            <h1 id="teacher-name" class="text-sm font-semibold text-slate-900">Teacher Name</h1>
+            <p id="teacher-sub" class="text-xs text-slate-500">Instructor Portal</p>
           </div>
         </div>
-      </div>
-
-      <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-          <h2 class="text-sm font-semibold text-slate-900">Student Register</h2>
-          <button id="save-attendance-btn" class="hidden rounded-md bg-emerald-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-emerald-700">
-            Save Attendance
-          </button>
-        </div>
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
-          <thead class="bg-slate-50 text-left text-xs font-medium text-slate-500">
-            <tr>
-              <th class="px-5 py-3">Admission No</th>
-              <th class="px-5 py-3">Student Name</th>
-              <th class="px-5 py-3 text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody id="att-table-body" class="divide-y divide-slate-100">
-            <tr>
-              <td colspan="3" class="px-5 py-6 text-center text-xs text-slate-500">Select a batch and click "Load Class Roster".</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- SECTION 2: ATTENDANCE CODE GENERATOR -->
-    <section id="section-code" class="hidden space-y-4">
-      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-base font-semibold text-slate-900">Generate Student Sign-in Code</h2>
-        <p class="text-xs text-slate-500 mt-0.5">Students can enter this 6-digit code on their portal to self-verify today's attendance.</p>
-        
-        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Batch</label>
-            <select id="code-batch" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none">
-              <option value="">Select Batch</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Validity (Minutes)</label>
-            <input type="number" id="code-validity" value="60" min="5" max="360" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none" />
-          </div>
-        </div>
-
-        <button id="gen-code-btn" class="mt-4 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700">
-          Generate Code
+        <button id="logout-btn" class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none">
+          Sign Out
         </button>
-
-        <div id="code-display" class="mt-6 hidden rounded-xl border border-purple-200 bg-purple-50 p-6 text-center">
-          <p class="text-xs font-medium uppercase text-purple-700">Active Classroom OTP</p>
-          <p id="generated-otp" class="mt-2 text-4xl font-extrabold tracking-widest text-purple-900">------</p>
-          <p id="code-expiry-text" class="mt-2 text-xs text-purple-600">Valid for 60 minutes</p>
-        </div>
       </div>
-    </section>
+    </header>
 
-    <!-- SECTION 3: MARKS ENTRY -->
-    <section id="section-marks" class="hidden space-y-4">
-      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Select Examination</label>
-            <select id="marks-exam" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none">
-              <option value="">Select Exam</option>
-            </select>
+    <!-- Main Content -->
+    <main class="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-6 sm:px-6">
+      <!-- Navigation Tabs -->
+      <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+        <button id="tab-attendance-btn" class="tab-btn rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white">
+          Mark Attendance
+        </button>
+        <button id="tab-code-btn" class="tab-btn rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          Generate Daily Code
+        </button>
+        <button id="tab-marks-btn" class="tab-btn rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          Enter Marks
+        </button>
+      </div>
+
+      <!-- Alert / Toast -->
+      <div id="toast" class="hidden rounded-lg border p-3 text-xs font-medium" role="alert"></div>
+
+      <!-- SECTION 1: ATTENDANCE REGISTER -->
+      <section id="section-attendance" class="space-y-4">
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Select Batch</label>
+              <select id="att-batch" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none">
+                <option value="">Select Batch</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Date</label>
+              <input type="date" id="att-date" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none" />
+            </div>
+            <div class="flex items-end">
+              <button id="load-students-btn" class="w-full rounded-md bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                Load Class Roster
+              </button>
+            </div>
           </div>
-          <div class="flex items-end">
-            <button id="load-marks-roster-btn" class="w-full rounded-md bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-800">
-              Open Marks Sheet
+        </div>
+
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3">
+            <h2 class="text-sm font-semibold text-slate-900">Student Register</h2>
+            <button id="save-attendance-btn" class="hidden rounded-md bg-emerald-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-emerald-700">
+              Save Attendance
             </button>
           </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm">
+              <thead class="bg-slate-50 text-left text-xs font-medium text-slate-500">
+                <tr>
+                  <th class="px-5 py-3">Admission No</th>
+                  <th class="px-5 py-3">Student Name</th>
+                  <th class="px-5 py-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="att-table-body" class="divide-y divide-slate-100">
+                <tr>
+                  <td colspan="3" class="px-5 py-6 text-center text-xs text-slate-500">Select a batch and click "Load Class Roster".</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-          <h2 class="text-sm font-semibold text-slate-900">Marks Entry Sheet</h2>
-          <button id="save-marks-btn" class="hidden rounded-md bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800">
-            Submit Scores
+      <!-- SECTION 2: ATTENDANCE CODE GENERATOR -->
+      <section id="section-code" class="hidden space-y-4">
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="text-base font-semibold text-slate-900">Generate Student Sign-in Code</h2>
+          <p class="mt-0.5 text-xs text-slate-500">Students can enter this 6-digit code on their portal to self-verify today's attendance.</p>
+          
+          <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Batch</label>
+              <select id="code-batch" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none">
+                <option value="">Select Batch</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Validity (Minutes)</label>
+              <input type="number" id="code-validity" value="60" min="5" max="360" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none" />
+            </div>
+          </div>
+
+          <button id="gen-code-btn" class="mt-4 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700">
+            Generate Code
           </button>
+
+          <div id="code-display" class="mt-6 hidden rounded-xl border border-purple-200 bg-purple-50 p-6 text-center">
+            <p class="text-xs font-medium uppercase text-purple-700">Active Classroom OTP</p>
+            <p id="generated-otp" class="mt-2 text-4xl font-extrabold tracking-widest text-purple-900">------</p>
+            <p id="code-expiry-text" class="mt-2 text-xs text-purple-600">Valid for 60 minutes</p>
+          </div>
         </div>
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
-          <thead class="bg-slate-50 text-left text-xs font-medium text-slate-500">
-            <tr>
-              <th class="px-5 py-3">Student</th>
-              <th class="px-5 py-3">Marks Obtained</th>
-              <th class="px-5 py-3">Remarks</th>
-            </tr>
-          </thead>
-          <tbody id="marks-table-body" class="divide-y divide-slate-100">
-            <tr>
-              <td colspan="3" class="px-5 py-6 text-center text-xs text-slate-500">Choose an exam and click "Open Marks Sheet".</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
+      </section>
+
+      <!-- SECTION 3: MARKS ENTRY -->
+      <section id="section-marks" class="hidden space-y-4">
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Select Examination</label>
+              <select id="marks-exam" class="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-slate-900 focus:outline-none">
+                <option value="">Select Exam</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button id="load-marks-roster-btn" class="w-full rounded-md bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                Open Marks Sheet
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3">
+            <h2 class="text-sm font-semibold text-slate-900">Marks Entry Sheet</h2>
+            <button id="save-marks-btn" class="hidden rounded-md bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800">
+              Submit Scores
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm">
+              <thead class="bg-slate-50 text-left text-xs font-medium text-slate-500">
+                <tr>
+                  <th class="px-5 py-3">Student</th>
+                  <th class="px-5 py-3">Marks Obtained</th>
+                  <th class="px-5 py-3">Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="marks-table-body" class="divide-y divide-slate-100">
+                <tr>
+                  <td colspan="3" class="px-5 py-6 text-center text-xs text-slate-500">Choose an exam and click "Open Marks Sheet".</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script type="module">
-    import { supabase, getUserProfile, logoutUser } from '../js/auth.js';
+    import { supabase } from '../js/auth.js';
 
+    const TEACHER_SESSION_KEY = 'cc_teacher_session';
+    const loginView = document.getElementById('loginView');
+    const dashView = document.getElementById('dashView');
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+    const loginBtn = document.getElementById('loginBtn');
+    const toast = document.getElementById('toast');
+
+    let currentTeacher = null;
     let batches = [];
     let currentBatchStudents = [];
 
-    const overlay = document.getElementById('auth-overlay');
-    const toast = document.getElementById('toast');
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('att-date').value = today;
+
+    function showLoginError(msg) {
+      if (!msg) {
+        loginError.classList.add('hidden');
+        loginError.textContent = '';
+      } else {
+        loginError.textContent = msg;
+        loginError.classList.remove('hidden');
+      }
+    }
 
     function showToast(msg, isError = false) {
       toast.textContent = msg;
@@ -193,11 +249,58 @@
       setTimeout(() => toast.classList.add('hidden'), 4000);
     }
 
-    // Set today's date
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('att-date').value = today;
+    // Login Form Submit (Username + PIN check against teachers table)
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showLoginError('');
+      const username = document.getElementById('tUsername').value.trim();
+      const pin = document.getElementById('tPin').value.trim();
 
-    // Tab Navigation
+      if (!username || !pin) {
+        showLoginError('Please enter both your Teacher Username and PIN.');
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Verifying...';
+
+      try {
+        const { data, error } = await supabase
+          .from('teachers')
+          .select('*')
+          .ilike('username', username)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data || String(data.pin || '').trim() !== pin) {
+          showLoginError('Invalid Username or PIN. Please check with Admin.');
+          return;
+        }
+
+        currentTeacher = data;
+        localStorage.setItem(TEACHER_SESSION_KEY, JSON.stringify(data));
+        renderDashboard();
+      } catch (err) {
+        showLoginError(err.message || 'Unable to sign in. Please try again.');
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In to Teacher Portal';
+      }
+    });
+
+    // Logout
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      localStorage.removeItem(TEACHER_SESSION_KEY);
+      currentTeacher = null;
+      dashView.classList.add('hidden');
+      dashView.classList.remove('flex');
+      loginView.classList.remove('hidden');
+      document.getElementById('tUsername').value = '';
+      document.getElementById('tPin').value = '';
+    });
+
+    // Tab Switching
     const tabs = {
       attendance: { btn: document.getElementById('tab-attendance-btn'), sec: document.getElementById('section-attendance') },
       code: { btn: document.getElementById('tab-code-btn'), sec: document.getElementById('section-code') },
@@ -210,7 +313,7 @@
         tabs[k].sec.classList.toggle('hidden', !isTarget);
         tabs[k].btn.className = isTarget
           ? 'tab-btn rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white'
-          : 'tab-btn rounded-lg bg-white border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50';
+          : 'tab-btn rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50';
       });
     }
 
@@ -218,25 +321,17 @@
     tabs.code.btn.addEventListener('click', () => activateTab('code'));
     tabs.marks.btn.addEventListener('click', () => activateTab('marks'));
 
-    // Authentication Guard
-    async function init() {
-      try {
-        const profile = await getUserProfile();
-        const role = String(profile?.role ?? '').toLowerCase();
-        if (!profile || (role !== 'teacher' && role !== 'admin')) {
-          window.location.replace('../index.html');
-          return;
-        }
-        document.getElementById('teacher-name').textContent = profile.full_name || 'Teacher';
-        document.getElementById('teacher-avatar').textContent = (profile.full_name || 'T')[0].toUpperCase();
-        overlay.remove();
-        loadBaseData();
-      } catch (err) {
-        window.location.replace('../index.html');
-      }
-    }
+    async function renderDashboard() {
+      if (!currentTeacher) return;
+      loginView.classList.add('hidden');
+      dashView.classList.remove('hidden');
+      dashView.classList.add('flex');
 
-    async function loadBaseData() {
+      const tName = currentTeacher.full_name || currentTeacher.name || currentTeacher.username || 'Teacher';
+      document.getElementById('teacher-name').textContent = tName;
+      document.getElementById('teacher-avatar').textContent = tName.charAt(0).toUpperCase();
+      document.getElementById('teacher-sub').textContent = currentTeacher.subject ? `${currentTeacher.subject} · @${currentTeacher.username}` : `Instructor · @${currentTeacher.username}`;
+
       const [batchRes, examRes] = await Promise.all([
         supabase.from('batches').select('id, name').order('name'),
         supabase.from('exams').select('id, title, max_marks').order('created_at', { ascending: false })
@@ -264,7 +359,7 @@
       ]);
 
       currentBatchStudents = stuRes.data || [];
-      const attMap = new Map((attRes.data || []).map(a => [String(a.student_id), a.status.toLowerCase()]));
+      const attMap = new Map((attRes.data || []).map(a => [String(a.student_id), String(a.status || '').toLowerCase()]));
 
       const tbody = document.getElementById('att-table-body');
       if (currentBatchStudents.length === 0) {
@@ -277,7 +372,7 @@
         const curStatus = attMap.get(String(s.id)) || 'present';
         return `
           <tr data-student="${s.id}">
-            <td class="px-5 py-3 font-mono text-xs text-slate-500">${s.admission_no}</td>
+            <td class="px-5 py-3 font-mono text-xs text-slate-500">${s.admission_no || '—'}</td>
             <td class="px-5 py-3 font-medium text-slate-900">${s.full_name}</td>
             <td class="px-5 py-3 text-center">
               <select class="att-status rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold ${curStatus === 'present' ? 'text-emerald-700 bg-emerald-50' : 'text-red-700 bg-red-50'}">
@@ -368,7 +463,7 @@
           <tr data-student="${s.id}">
             <td class="px-5 py-3">
               <span class="font-medium text-slate-900">${s.full_name}</span>
-              <span class="block text-xs font-mono text-slate-400">${s.admission_no}</span>
+              <span class="block font-mono text-xs text-slate-400">${s.admission_no || ''}</span>
             </td>
             <td class="px-5 py-3">
               <div class="flex items-center gap-1.5">
@@ -412,13 +507,18 @@
       else { showToast('Exam marks uploaded successfully!'); }
     });
 
-    // Logout
-    document.getElementById('logout-btn').addEventListener('click', async () => {
-      await logoutUser();
-      window.location.replace('../index.html');
-    });
-
-    init();
+    // Auto-login if session exists
+    (function init() {
+      const saved = localStorage.getItem(TEACHER_SESSION_KEY);
+      if (saved) {
+        try {
+          currentTeacher = JSON.parse(saved);
+          renderDashboard();
+        } catch (_) {
+          localStorage.removeItem(TEACHER_SESSION_KEY);
+        }
+      }
+    })();
   </script>
 </body>
 </html>

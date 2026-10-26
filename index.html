@@ -46,38 +46,38 @@
           <p class="mt-2 text-xs leading-relaxed text-slate-500">Track your child's classroom attendance, exam marks, and fee receipts.</p>
         </a>
 
-        <!-- 3. Teacher Portal Card -->
-        <button type="button" data-login-role="Teacher" class="staff-login-trigger group flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-7 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-500 hover:shadow-md focus:outline-none">
+        <!-- 3. Teacher Portal Card (Now links directly to Teacher Username/PIN Portal) -->
+        <a href="pages/teacher-portal.html" class="group flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-7 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-500 hover:shadow-md">
           <div class="mb-4 rounded-full bg-purple-50 p-4 text-purple-600 transition group-hover:bg-purple-600 group-hover:text-white">
             <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
             </svg>
           </div>
           <h2 class="text-lg font-semibold text-slate-900">Teacher Portal</h2>
-          <p class="mt-2 text-xs leading-relaxed text-slate-500">Mark batch attendance, generate classroom OTP codes, and enter marks.</p>
-        </button>
+          <p class="mt-2 text-xs leading-relaxed text-slate-500">Login with Teacher Username &amp; PIN to take attendance and enter marks.</p>
+        </a>
 
         <!-- 4. Admin Portal Card -->
-        <button type="button" data-login-role="Admin" class="staff-login-trigger group flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-7 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-800 hover:shadow-md focus:outline-none">
+        <button type="button" id="show-admin-login" class="group flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-7 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-800 hover:shadow-md focus:outline-none">
           <div class="mb-4 rounded-full bg-slate-100 p-4 text-slate-700 transition group-hover:bg-slate-900 group-hover:text-white">
             <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
             </svg>
           </div>
           <h2 class="text-lg font-semibold text-slate-900">Admin Portal</h2>
-          <p class="mt-2 text-xs leading-relaxed text-slate-500">Manage student admissions, batches, fee collections, and settings.</p>
+          <p class="mt-2 text-xs leading-relaxed text-slate-500">Manage student admissions, teachers, fee collections, and settings.</p>
         </button>
 
       </div>
 
-      <!-- Staff (Admin / Teacher) Login Form (Hidden by default) -->
-      <div id="staff-login-section" class="mx-auto hidden w-full max-w-sm">
+      <!-- Admin Login Form (Hidden by default) -->
+      <div id="admin-login-section" class="mx-auto hidden w-full max-w-sm">
         <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           
           <div class="mb-6 flex items-center justify-between">
             <div>
-              <h3 id="login-modal-title" class="text-lg font-semibold text-slate-900">Staff Sign In</h3>
-              <p id="login-modal-subtitle" class="text-xs text-slate-500">Enter your credentials to continue</p>
+              <h3 class="text-lg font-semibold text-slate-900">Admin Sign In</h3>
+              <p class="text-xs text-slate-500">Enter administrator credentials</p>
             </div>
             <button type="button" id="back-to-roles" class="rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus:outline-none">&larr; Back</button>
           </div>
@@ -134,7 +134,6 @@
 
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Optional Dynamic Branding Loader (fetches custom institute name/logo if a 'settings' table exists)
     async function loadInstituteBranding() {
       try {
         const { data } = await supabase.from('settings').select('institute_name, logo_url').maybeSingle();
@@ -149,16 +148,13 @@
         if (data?.logo_url) {
           document.getElementById('institute-logo').src = data.logo_url;
         }
-      } catch (_) {
-        // Fallback to default static text if settings table is not yet created
-      }
+      } catch (_) {}
     }
     loadInstituteBranding();
 
-    // UI Toggling Logic for Teacher & Admin Cards
     const roleSelection = document.getElementById('role-selection');
-    const staffLoginSection = document.getElementById('staff-login-section');
-    const loginModalTitle = document.getElementById('login-modal-title');
+    const adminLoginSection = document.getElementById('admin-login-section');
+    const showAdminBtn = document.getElementById('show-admin-login');
     const backToRolesBtn = document.getElementById('back-to-roles');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
@@ -177,25 +173,19 @@
       alertBox.classList.add('flex');
     }
 
-    document.querySelectorAll('.staff-login-trigger').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const selectedRole = btn.getAttribute('data-login-role') || 'Staff';
-        loginModalTitle.textContent = `${selectedRole} Sign In`;
-        emailInput.placeholder = selectedRole.toLowerCase() === 'teacher' ? 'teacher@coaching.com' : 'admin@coaching.com';
-        hideError();
-        roleSelection.classList.add('hidden');
-        staffLoginSection.classList.remove('hidden');
-        setTimeout(() => emailInput.focus(), 100);
-      });
+    showAdminBtn.addEventListener('click', () => {
+      hideError();
+      roleSelection.classList.add('hidden');
+      adminLoginSection.classList.remove('hidden');
+      setTimeout(() => emailInput.focus(), 100);
     });
 
     backToRolesBtn.addEventListener('click', () => {
       hideError();
-      staffLoginSection.classList.add('hidden');
+      adminLoginSection.classList.add('hidden');
       roleSelection.classList.remove('hidden');
     });
 
-    // Login Form Logic
     const form = document.getElementById('login-form');
     const submitBtn = document.getElementById('submit-btn');
     const btnLabel = document.getElementById('btn-label');
